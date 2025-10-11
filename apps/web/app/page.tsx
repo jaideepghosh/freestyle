@@ -63,7 +63,9 @@ export default function Home() {
             Read our docs
           </a>
         </div>
-        <Button className={styles.secondary}>Open alert</Button>
+        <Button variant={"destructive"}>Click me</Button>
+        <Button variant={"default"}>Click me</Button>
+        <Button variant={"secondary"}>Click me</Button>
       </main>
       <footer className={styles.footer}>
         <a

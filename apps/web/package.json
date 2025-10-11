@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "@freestyle/web",
   "version": "0.1.0",
   "type": "module",
   "private": true,
@@ -12,13 +12,16 @@
   },
   "dependencies": {
     "@freestyle/ui": "*",
+    "autoprefixer": "^10.4.21",
     "next": "^15.5.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "tailwindcss": "^4.1.14"
   },
   "devDependencies": {
     "@freestyle/eslint-config": "*",
     "@freestyle/typescript-config": "*",
+    "@tailwindcss/postcss": "^4.1.14",
     "@types/node": "^22.15.3",
     "@types/react": "19.1.0",
     "@types/react-dom": "19.1.1",

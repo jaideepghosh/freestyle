@@ -1,4 +1,7 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  // Ensure Next compiles and processes CSS from the local UI package
+  transpilePackages: ["@freestyle/ui"],
+};
 
 export default nextConfig;
