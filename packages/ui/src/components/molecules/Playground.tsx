@@ -11,8 +11,10 @@ export const Playground = () => {
     "json" | "html" | "text" | null
   >(null);
   const [responseHeader, setResponseHeader] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const makeRequest = async () => {
+    setIsLoading(true);
     try {
       const res = await fetch(requestUrl, {
         method: "GET", // For simplicity, using GET. You can extend this to support other methods.
@@ -52,12 +54,10 @@ export const Playground = () => {
         setResponseType("text");
         return { type: "text", data: text };
       }
-
-      const data = await res.json();
-      console.log("data:: ", data);
-      setResponse(data);
     } catch (error) {
       setResponse("Failed to fetch");
+    } finally {
+      setIsLoading(false);
     }
   };
   return (
@@ -77,6 +77,7 @@ export const Playground = () => {
           response={response}
           responseType={responseType}
           responseHeader={responseHeader}
+          isLoading={isLoading}
         />
       </div>
     </>
