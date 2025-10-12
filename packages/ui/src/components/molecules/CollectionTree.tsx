@@ -85,7 +85,9 @@ const CollectionItem = ({
   );
 };
 
-const CollectionTree: React.FC<CollectionTreeProps> = ({ collections }) => {
+export const CollectionTree: React.FC<CollectionTreeProps> = ({
+  collections,
+}) => {
   return (
     <div className="w-80 border-r flex flex-col">
       {/* CollectionTree Header */}
@@ -114,5 +116,3 @@ const CollectionTree: React.FC<CollectionTreeProps> = ({ collections }) => {
     </div>
   );
 };
-
-export default CollectionTree;
