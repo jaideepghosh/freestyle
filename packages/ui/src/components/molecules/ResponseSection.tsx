@@ -1,5 +1,5 @@
 import { Copy, Check, Play, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Button,
   Select,
@@ -11,6 +11,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Badge,
 } from "@freestyle/ui";
 import Editor from "@monaco-editor/react";
 
@@ -28,6 +29,10 @@ export const ResponseSection = ({
   const [selectedLanguage, setSelectedLanguage] = useState("plaintext");
   const [isCopied, setIsCopied] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+
+  const responseHeadersCount = useMemo(() => {
+    return responseHeader ? Object.keys(responseHeader).length : 0;
+  }, [responseHeader]);
 
   const handleCopy = async () => {
     if (response) {
@@ -55,7 +60,14 @@ export const ResponseSection = ({
 
             <TabsList className="bg-transparent">
               <TabsTrigger value="body">Body</TabsTrigger>
-              <TabsTrigger value="headers">Headers</TabsTrigger>
+              <TabsTrigger value="headers">
+                Headers
+                {responseHeadersCount > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {responseHeadersCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
             </TabsList>
             {/* <Button variant="ghost" size="sm" className="h-8">
             <History className="h-4 w-4" />
