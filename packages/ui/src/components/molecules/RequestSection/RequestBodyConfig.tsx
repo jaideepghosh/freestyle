@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@freestyle/ui";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, PlusIcon } from "lucide-react";
 
 export default function RequestBodyConfig() {
   const [bodyType, setBodyType] = useState("none");
@@ -65,34 +65,37 @@ export default function RequestBodyConfig() {
       case "x-www-form-urlencoded":
         const isFormData = bodyType === "form-data";
         return (
-          <div className="space-y-2">
-            <div className="grid grid-cols-12 gap-4 px-4 py-2 bg-gray-50 border-b text-xs font-medium text-gray-600">
-              <div className={`col-span-${isFormData ? 3 : 4}`}>Key</div>
-              <div className={`col-span-${isFormData ? 4 : 4}`}>Value</div>
-              <div className={`col-span-${isFormData ? 4 : 3}`}>
+          <div className="border overflow-hidden">
+            <div className="grid grid-cols-12 gap-4 px-4 py-2 bg-muted border-b text-xs font-medium text-muted-foreground">
+              <div className={`col-span-${isFormData ? 3 : 4} ml-1 mt-1`}>
+                Key
+              </div>
+              <div className={`col-span-${isFormData ? 4 : 4} ml-1 mt-1`}>
+                Value
+              </div>
+              <div className={`col-span-${isFormData ? 4 : 3} ml-1 mt-1`}>
                 Description
               </div>
-              <div className="col-span-1 flex justify-end items-center">
-                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
+              <div className="col-span-1 text-right">
+                <Button variant="ghost" size="icon" className="h-6 w-6">
                   Bulk Edit
                 </Button>
               </div>
             </div>
+
             {formDataRows.map((row, index) => (
               <div
                 key={index}
-                className="grid grid-cols-12 gap-4 px-4 py-2 border-b items-center hover:bg-gray-50"
+                className="grid grid-cols-12 gap-4 px-4 py-3 border-b items-center"
               >
-                <div className={`col-span-${isFormData ? 3 : 4}`}>
-                  <Input
-                    placeholder="Key"
-                    value={row.key ?? ""}
-                    onChange={(e) =>
-                      updateFormDataRow(index, "key", e.target.value)
-                    }
-                    className="h-8 text-sm"
-                  />
-                </div>
+                <Input
+                  placeholder="Key"
+                  value={row.key ?? ""}
+                  onChange={(e) =>
+                    updateFormDataRow(index, "key", e.target.value)
+                  }
+                  className={`col-span-${isFormData ? 3 : 4} h-8`}
+                />
 
                 <div className={`col-span-${isFormData ? 4 : 4} flex gap-2`}>
                   {isFormData && (
@@ -102,9 +105,7 @@ export default function RequestBodyConfig() {
                         updateFormDataRow(index, "type", value)
                       }
                     >
-                      <SelectTrigger className="w-20 h-8 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger className="w-20 h-8 text-sm" />
                       <SelectContent>
                         <SelectItem value="Text">Text</SelectItem>
                         <SelectItem value="File">File</SelectItem>
@@ -118,13 +119,12 @@ export default function RequestBodyConfig() {
                       className="h-8 text-sm flex-1"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        updateFormDataRow(index, "value", file?.name ?? ""); // store filename or blank
+                        updateFormDataRow(index, "value", file?.name ?? "");
                       }}
                     />
                   ) : (
                     <Input
                       placeholder="Value"
-                      // value={row.value ?? ""}
                       onChange={(e) =>
                         updateFormDataRow(index, "value", e.target.value)
                       }
@@ -133,33 +133,27 @@ export default function RequestBodyConfig() {
                   )}
                 </div>
 
-                <div className={`col-span-${isFormData ? 4 : 3}`}>
-                  <Input
-                    placeholder="Description"
-                    value={row.description ?? ""}
-                    onChange={(e) =>
-                      updateFormDataRow(index, "description", e.target.value)
-                    }
-                    className="h-8 text-sm"
-                  />
-                </div>
+                <Input
+                  placeholder="Description"
+                  value={row.description ?? ""}
+                  onChange={(e) =>
+                    updateFormDataRow(index, "description", e.target.value)
+                  }
+                  className={`col-span-${isFormData ? 4 : 3} h-8`}
+                />
 
-                <div className="col-span-1 flex justify-end">
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                <div className="col-span-1 text-right">
+                  <Button variant="ghost" size="icon" className="h-6 w-6">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             ))}
 
-            <div className="px-4 py-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={addFormDataRow}
-                className="text-xs text-blue-600 hover:text-blue-700"
-              >
-                + Add row
+            <div className="flex justify-center py-2">
+              <Button size="sm" variant="secondary" onClick={addFormDataRow}>
+                <PlusIcon />
+                Add more
               </Button>
             </div>
           </div>
@@ -213,7 +207,7 @@ export default function RequestBodyConfig() {
 
   return (
     <div className="w-full mx-auto">
-      <div className="border-b p-4">
+      <div className="px-4 pb-2">
         <RadioGroup
           value={bodyType}
           onValueChange={setBodyType}
