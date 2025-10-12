@@ -70,7 +70,10 @@ export default function RequestBodyConfig({
 
   const removeFormDataRow = useCallback(
     (id: string) => {
-      onFormDataChange(formData.filter((row: FormDataRow) => row.id !== id));
+      // Don't allow removing the last form data row
+      if (formData.length > 1) {
+        onFormDataChange(formData.filter((row: FormDataRow) => row.id !== id));
+      }
     },
     [formData, onFormDataChange]
   );
@@ -126,7 +129,7 @@ export default function RequestBodyConfig({
                   aria-label="Enable all form fields"
                 />
               </div>
-              <div className={`col-span-${isFormData ? 3 : 4} ml-1 mt-1`}>
+              <div className={`col-span-${isFormData ? 3 : 3} ml-1 mt-1`}>
                 Key
               </div>
               <div className={`col-span-${isFormData ? 4 : 4} ml-1 mt-1`}>
@@ -135,11 +138,7 @@ export default function RequestBodyConfig({
               <div className={`col-span-${isFormData ? 3 : 3} ml-1 mt-1`}>
                 Description
               </div>
-              <div className="col-span-1 text-right">
-                <Button variant="ghost" size="icon" className="h-6 w-6">
-                  Bulk Edit
-                </Button>
-              </div>
+              <div className="col-span-1 text-right"></div>
             </div>
 
             {formData.map((row: FormDataRow, index: number) => (
@@ -168,7 +167,7 @@ export default function RequestBodyConfig({
                       sanitizeInput(e.target.value)
                     )
                   }
-                  className={`col-span-${isFormData ? 3 : 4} h-8`}
+                  className={`col-span-${isFormData ? 3 : 3} h-8`}
                   aria-label={`Form field key ${index + 1}`}
                 />
 
@@ -240,6 +239,7 @@ export default function RequestBodyConfig({
                     size="icon"
                     className="h-6 w-6"
                     onClick={() => removeFormDataRow(row.id)}
+                    disabled={formData.length <= 1}
                     aria-label={`Remove form field ${row.key || index + 1}`}
                   >
                     <Trash2 className="h-4 w-4" />

@@ -11,6 +11,12 @@ export const Playground = () => {
     "json" | "html" | "text" | null
   >(null);
   const [responseHeader, setResponseHeader] = useState<any>(null);
+  const [requestTime, setRequestTime] = useState<number | undefined>(undefined);
+  const [responseSize, setResponseSize] = useState<number | undefined>(
+    undefined
+  );
+  const [statusCode, setStatusCode] = useState<number | undefined>(undefined);
+  const [statusText, setStatusText] = useState<string | undefined>(undefined);
 
   // Use the new request state management
   const {
@@ -28,6 +34,14 @@ export const Playground = () => {
 
   const makeRequest = useCallback(async () => {
     onRequestStateChange({ isLoading: true, error: null });
+
+    // Reset metrics
+    setRequestTime(undefined);
+    setResponseSize(undefined);
+    setStatusCode(undefined);
+    setStatusText(undefined);
+
+    const startTime = performance.now();
 
     try {
       // Build headers from the request state
@@ -91,6 +105,15 @@ export const Playground = () => {
         body,
       });
 
+      // Capture request timing
+      const endTime = performance.now();
+      const duration = Math.round(endTime - startTime);
+      setRequestTime(duration);
+
+      // Capture status code and text
+      setStatusCode(res.status);
+      setStatusText(res.statusText);
+
       const contentType = res.headers.get("content-type");
 
       // Convert Headers object to a plain object
@@ -104,15 +127,21 @@ export const Playground = () => {
         const data = await res.json();
         setResponse(data);
         setResponseType("json");
+        // Calculate response size for JSON
+        setResponseSize(new Blob([JSON.stringify(data)]).size);
       } else if (contentType?.includes("text/html")) {
         const html = await res.text();
         setResponse(html);
         setResponseType("html");
+        // Calculate response size for HTML
+        setResponseSize(new Blob([html]).size);
       } else {
         // fallback to text for other types like text/plain, XML, etc.
         const text = await res.text();
         setResponse(text);
         setResponseType("text");
+        // Calculate response size for text
+        setResponseSize(new Blob([text]).size);
       }
     } catch (error) {
       const errorMessage =
@@ -137,6 +166,10 @@ export const Playground = () => {
           responseType={responseType}
           responseHeader={responseHeader}
           isLoading={requestState.isLoading}
+          requestTime={requestTime}
+          responseSize={responseSize}
+          statusCode={statusCode}
+          statusText={statusText}
         />
       </div>
     </>

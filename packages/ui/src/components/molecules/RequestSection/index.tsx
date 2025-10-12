@@ -240,11 +240,7 @@ export const RequestSection = ({
                 <div className="col-span-3 ml-1 mt-1">Key</div>
                 <div className="col-span-3 ml-1 mt-1">Value</div>
                 <div className="col-span-4 ml-1 mt-1">Description</div>
-                <div className="col-span-1 text-right">
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </div>
+                <div className="col-span-1 text-right"></div>
               </div>
 
               {requestState.queryParams.map(
@@ -327,13 +323,17 @@ export const RequestSection = ({
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6"
-                        onClick={() =>
-                          onRequestStateChange({
-                            queryParams: requestState.queryParams.filter(
-                              (p) => p.id !== param.id
-                            ),
-                          })
-                        }
+                        onClick={() => {
+                          // Don't allow removing the last parameter
+                          if (requestState.queryParams.length > 1) {
+                            onRequestStateChange({
+                              queryParams: requestState.queryParams.filter(
+                                (p) => p.id !== param.id
+                              ),
+                            });
+                          }
+                        }}
+                        disabled={requestState.queryParams.length <= 1}
                         aria-label={`Remove parameter ${param.key || index + 1}`}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -392,11 +392,7 @@ export const RequestSection = ({
                 <div className="col-span-3 ml-1 mt-1">Key</div>
                 <div className="col-span-3 ml-1 mt-1">Value</div>
                 <div className="col-span-4 ml-1 mt-1">Description</div>
-                <div className="col-span-1 text-right">
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </div>
+                <div className="col-span-1 text-right"></div>
               </div>
 
               {requestState.headers.map(
@@ -479,13 +475,17 @@ export const RequestSection = ({
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6"
-                        onClick={() =>
-                          onRequestStateChange({
-                            headers: requestState.headers.filter(
-                              (h) => h.id !== header.id
-                            ),
-                          })
-                        }
+                        onClick={() => {
+                          // Don't allow removing the last header
+                          if (requestState.headers.length > 1) {
+                            onRequestStateChange({
+                              headers: requestState.headers.filter(
+                                (h) => h.id !== header.id
+                              ),
+                            });
+                          }
+                        }}
+                        disabled={requestState.headers.length <= 1}
                         aria-label={`Remove header ${header.key || index + 1}`}
                       >
                         <Trash2 className="h-4 w-4" />

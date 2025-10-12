@@ -8,6 +8,31 @@ import {
 } from "../types/api";
 import { validateRequest } from "../utils/validation";
 
+const createEmptyHeader = (): RequestHeader => ({
+  id: `header-${Date.now()}`,
+  key: "",
+  value: "",
+  description: "",
+  enabled: true,
+});
+
+const createEmptyQueryParam = (): QueryParam => ({
+  id: `param-${Date.now()}`,
+  key: "",
+  value: "",
+  description: "",
+  enabled: true,
+});
+
+const createEmptyFormDataRow = (): FormDataRow => ({
+  id: `form-${Date.now()}`,
+  key: "",
+  value: "",
+  type: "Text",
+  description: "",
+  enabled: true,
+});
+
 const initialRequestState: RequestState = {
   config: {
     url: "",
@@ -15,10 +40,10 @@ const initialRequestState: RequestState = {
     headers: {},
     timeout: 30000,
   },
-  headers: [],
-  queryParams: [],
+  headers: [createEmptyHeader()],
+  queryParams: [createEmptyQueryParam()],
   bodyType: "none",
-  formData: [],
+  formData: [createEmptyFormDataRow()],
   rawContent: "",
   rawFormat: "JSON",
   isLoading: false,
@@ -43,13 +68,7 @@ export const useRequestState = (initialState?: Partial<RequestState>) => {
   }, []);
 
   const addHeader = useCallback(() => {
-    const newHeader: RequestHeader = {
-      id: `header-${Date.now()}`,
-      key: "",
-      value: "",
-      description: "",
-      enabled: true,
-    };
+    const newHeader = createEmptyHeader();
     setState((prev) => ({
       ...prev,
       headers: [...prev.headers, newHeader],
@@ -69,20 +88,18 @@ export const useRequestState = (initialState?: Partial<RequestState>) => {
   );
 
   const removeHeader = useCallback((id: string) => {
-    setState((prev) => ({
-      ...prev,
-      headers: prev.headers.filter((header) => header.id !== id),
-    }));
+    setState((prev) => {
+      // Don't allow removing the last header
+      if (prev.headers.length <= 1) return prev;
+      return {
+        ...prev,
+        headers: prev.headers.filter((header) => header.id !== id),
+      };
+    });
   }, []);
 
   const addQueryParam = useCallback(() => {
-    const newParam: QueryParam = {
-      id: `param-${Date.now()}`,
-      key: "",
-      value: "",
-      description: "",
-      enabled: true,
-    };
+    const newParam = createEmptyQueryParam();
     setState((prev) => ({
       ...prev,
       queryParams: [...prev.queryParams, newParam],
@@ -102,21 +119,18 @@ export const useRequestState = (initialState?: Partial<RequestState>) => {
   );
 
   const removeQueryParam = useCallback((id: string) => {
-    setState((prev) => ({
-      ...prev,
-      queryParams: prev.queryParams.filter((param) => param.id !== id),
-    }));
+    setState((prev) => {
+      // Don't allow removing the last query param
+      if (prev.queryParams.length <= 1) return prev;
+      return {
+        ...prev,
+        queryParams: prev.queryParams.filter((param) => param.id !== id),
+      };
+    });
   }, []);
 
   const addFormDataRow = useCallback(() => {
-    const newRow: FormDataRow = {
-      id: `form-${Date.now()}`,
-      key: "",
-      value: "",
-      type: "Text",
-      description: "",
-      enabled: true,
-    };
+    const newRow = createEmptyFormDataRow();
     setState((prev) => ({
       ...prev,
       formData: [...prev.formData, newRow],
@@ -136,10 +150,14 @@ export const useRequestState = (initialState?: Partial<RequestState>) => {
   );
 
   const removeFormDataRow = useCallback((id: string) => {
-    setState((prev) => ({
-      ...prev,
-      formData: prev.formData.filter((row) => row.id !== id),
-    }));
+    setState((prev) => {
+      // Don't allow removing the last form data row
+      if (prev.formData.length <= 1) return prev;
+      return {
+        ...prev,
+        formData: prev.formData.filter((row) => row.id !== id),
+      };
+    });
   }, []);
 
   const validation = useMemo(() => {

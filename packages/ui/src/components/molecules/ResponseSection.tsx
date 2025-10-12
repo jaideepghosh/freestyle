@@ -12,6 +12,10 @@ import {
   TabsList,
   TabsTrigger,
   Badge,
+  getStatusColor,
+  getStatusText,
+  formatRequestTime,
+  formatResponseSize,
 } from "@freestyle/ui";
 import Editor from "@monaco-editor/react";
 
@@ -20,11 +24,19 @@ export const ResponseSection = ({
   responseType,
   responseHeader,
   isLoading = false,
+  requestTime,
+  responseSize,
+  statusCode,
+  statusText,
 }: {
   response: any;
   responseType: any;
   responseHeader: any;
   isLoading?: boolean;
+  requestTime?: number;
+  responseSize?: number;
+  statusCode?: number;
+  statusText?: string;
 }) => {
   const [selectedLanguage, setSelectedLanguage] = useState("plaintext");
   const [isCopied, setIsCopied] = useState(false);
@@ -86,6 +98,29 @@ export const ResponseSection = ({
             <ChevronDown className="h-4 w-4" />
           </Button> */}
             <div className="ml-auto flex items-center gap-2">
+              {/* Request Information */}
+              {response && (requestTime || responseSize || statusCode) && (
+                <div className="flex items-center gap-3 text-xs text-gray-600">
+                  {statusCode && (
+                    <span
+                      className={`font-medium ${getStatusColor(statusCode)}`}
+                    >
+                      {statusCode} {getStatusText(statusCode, statusText)}
+                    </span>
+                  )}
+                  {requestTime && (
+                    <span className="text-gray-500">
+                      {formatRequestTime(requestTime)}
+                    </span>
+                  )}
+                  {responseSize && (
+                    <span className="text-gray-500">
+                      {formatResponseSize(responseSize)}
+                    </span>
+                  )}
+                </div>
+              )}
+
               {response && (
                 <Button
                   variant="ghost"
