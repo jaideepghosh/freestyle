@@ -1,5 +1,5 @@
 import { Copy, Check, Play, Loader2 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Button,
   Select,
@@ -29,6 +29,17 @@ export const ResponseSection = ({
   const [selectedLanguage, setSelectedLanguage] = useState("plaintext");
   const [isCopied, setIsCopied] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+
+  // Automatically set language based on responseType
+  useEffect(() => {
+    if (responseType === "json") {
+      setSelectedLanguage("javascript");
+    } else if (responseType === "html") {
+      setSelectedLanguage("html");
+    } else {
+      setSelectedLanguage("plaintext");
+    }
+  }, [responseType]);
 
   const responseHeadersCount = useMemo(() => {
     return responseHeader ? Object.keys(responseHeader).length : 0;
