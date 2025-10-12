@@ -53,8 +53,8 @@ export const RequestSection = () => {
 
       {/* Tabs Navigation */}
       <Tabs defaultValue="params" className="flex flex-col">
-        <div className="flex items-center border-b px-4">
-          <TabsList className="h-auto p-0 bg-transparent">
+        <div className="flex items-center border-b px-4 -mx-4">
+          <TabsList className="h-10 p-0 bg-transparent">
             <TabsTrigger value="params">Params</TabsTrigger>
 
             <TabsTrigger value="headers">

@@ -12,3 +12,5 @@ export * from "./components/ui/tabs";
 
 export * from "./components/molecules/CollectionTree";
 export * from "./components/molecules/RequestSection";
+export * from "./components/molecules/ResponseSection";
+export * from "./components/molecules/Playground";
