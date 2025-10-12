@@ -62,7 +62,7 @@ export default function Freestyle() {
 
   return (
     <div className="flex h-screen bg-background text-sm">
-      <CollectionTree collections={collections} />
+      {/* <CollectionTree collections={collections} /> */}
 
       {/**
        * Dynamically add new tabs when clicked on the plus icon, also when clicked on any request from the CollectionTree, show the request in a new tab.
@@ -70,7 +70,7 @@ export default function Freestyle() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <Tabs defaultValue="get-users">
+        {/* <Tabs defaultValue="get-users">
           <div className="flex items-center gap-1 px-4 border-b">
             <TabsList className="h-10 p-0 bg-transparent">
               <TabsTrigger value="get-users">Get users</TabsTrigger>
@@ -110,7 +110,11 @@ export default function Freestyle() {
           <TabsContent value="new" className="flex-1 px-4">
             <Playground />
           </TabsContent>
-        </Tabs>
+        </Tabs> */}
+
+        <div className="flex-1 px-4">
+          <Playground />
+        </div>
       </div>
     </div>
   );
