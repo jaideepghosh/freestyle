@@ -20,7 +20,15 @@ import {
 } from "@freestyle/ui";
 import RequestBodyConfig from "./RequestBodyConfig";
 
-export const RequestSection = () => {
+export const RequestSection = ({
+  requestUrl,
+  setRequestUrl,
+  requestHeaders,
+  setRequestHeaders,
+  requestBody,
+  setRequestBody,
+  makeRequest,
+}: any) => {
   return (
     <div className="min-h-[300px]">
       <div className="p-4">
@@ -37,8 +45,13 @@ export const RequestSection = () => {
               <SelectItem value="delete">DELETE</SelectItem>
             </SelectContent>
           </Select>
-          <Input placeholder="Enter URL or paste text" className="flex-1" />
-          <Button>
+          <Input
+            placeholder="Enter URL or paste text"
+            className="flex-1"
+            value={requestUrl}
+            onChange={(e) => setRequestUrl(e.target.value)}
+          />
+          <Button onClick={makeRequest}>
             Send
             <SendHorizonal className="h-4 w-4" />
           </Button>
