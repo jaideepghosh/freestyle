@@ -1,102 +1,117 @@
-import Image, { type ImageProps } from "next/image";
-import { Button } from "@freestyle/ui";
-import styles from "./page.module.css";
+"use client";
+import React from "react";
+import { PlusIcon } from "lucide-react";
+import {
+  Badge,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  CollectionTree,
+  Playground,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@freestyle/ui";
 
-type Props = Omit<ImageProps, "src"> & {
-  srcLight: string;
-  srcDark: string;
-};
-
-const ThemeImage = (props: Props) => {
-  const { srcLight, srcDark, ...rest } = props;
+export default function Freestyle() {
+  const collections = [
+    { name: "Simple Collection" },
+    {
+      name: "One Level Nested Collection One Level Nested Collection One Level Nested Collection",
+      children: [{ name: "Child 1" }, { name: "Child 2" }],
+    },
+    {
+      name: "Two Level Nested Collection",
+      children: [
+        {
+          name: "Child 1",
+          children: [{ name: "Grandchild 1" }, { name: "Grandchild 2" }],
+        },
+        {
+          name: "Child 2",
+          children: [{ name: "Grandchild 3" }, { name: "Grandchild 4" }],
+        },
+      ],
+    },
+    {
+      name: "Three Level Nested Collection",
+      children: [
+        {
+          name: "Child 1",
+          children: [
+            {
+              name: "Grandchild 1",
+              children: [
+                { name: "Super Grandchild 1" },
+                { name: "Super Grandchild 2" },
+              ],
+            },
+            { name: "Grandchild 2" },
+          ],
+        },
+        {
+          name: "Child 2",
+          children: [{ name: "Grandchild 3" }, { name: "Grandchild 4" }],
+        },
+      ],
+    },
+  ];
 
   return (
-    <>
-      <Image {...rest} src={srcLight} className="imgLight" />
-      <Image {...rest} src={srcDark} className="imgDark" />
-    </>
-  );
-};
+    <div className="flex h-screen bg-background text-sm">
+      <CollectionTree collections={collections} />
 
-export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <ThemeImage
-          className={styles.logo}
-          srcLight="turborepo-dark.svg"
-          srcDark="turborepo-light.svg"
-          alt="Turborepo logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>apps/web/app/page.tsx</code>
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+      {/**
+       * Dynamically add new tabs when clicked on the plus icon, also when clicked on any request from the CollectionTree, show the request in a new tab.
+       */}
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new/clone?demo-description=Learn+to+implement+a+monorepo+with+a+two+Next.js+sites+that+has+installed+three+local+packages.&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F4K8ZISWAzJ8X1504ca0zmC%2F0b21a1c6246add355e55816278ef54bc%2FBasic.png&demo-title=Monorepo+with+Turborepo&demo-url=https%3A%2F%2Fexamples-basic-web.vercel.sh%2F&from=templates&project-name=Monorepo+with+Turborepo&repository-name=monorepo-turborepo&repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fturborepo%2Ftree%2Fmain%2Fexamples%2Fbasic&root-directory=apps%2Fdocs&skippable-integrations=1&teamSlug=vercel&utm_source=create-turbo"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://turborepo.com/docs?utm_source"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-        <Button variant={"destructive"}>Click me</Button>
-        <Button variant={"default"}>Click me</Button>
-        <Button variant={"secondary"}>Click me</Button>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com/templates?search=turborepo&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://turborepo.com?utm_source=create-turbo"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to turborepo.com →
-        </a>
-      </footer>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        <Tabs defaultValue="get-users">
+          <div className="flex items-center gap-1 px-4 border-b">
+            <TabsList className="h-10 p-0 bg-transparent">
+              <TabsTrigger value="get-users">Get users</TabsTrigger>
+              <TabsTrigger value="health">
+                <Badge
+                  variant="secondary"
+                  className="bg-green-100 text-green-700 text-xs py-0"
+                >
+                  GET
+                </Badge>
+                Health check
+              </TabsTrigger>
+              <TabsTrigger value="new">
+                <PlusIcon />
+              </TabsTrigger>
+            </TabsList>
+            <div className="ml-auto">
+              <Select defaultValue="payable">
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="payable">Payable Local</SelectItem>
+                  <SelectItem value="production">Production</SelectItem>
+                  <SelectItem value="staging">Staging</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <TabsContent value="get-users" className="flex-1 px-4">
+            <Playground />
+          </TabsContent>
+          <TabsContent value="health" className="flex-1 px-4">
+            <Playground />
+          </TabsContent>
+          <TabsContent value="new" className="flex-1 px-4">
+            <Playground />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
