@@ -17,6 +17,7 @@ export * from "./components/molecules/RequestSection";
 export * from "./components/molecules/ResponseSection";
 export * from "./components/molecules/Playground";
 export * from "./components/molecules/ResizableSplit";
+export * from "./components/molecules/FolderSelectionDialog";
 
 // Export types
 export * from "./types/api";
@@ -27,3 +28,6 @@ export * from "./hooks/useRequestState";
 // Export utilities
 export * from "./utils/validation";
 export * from "./utils/http";
+
+// Export database service
+export * from "./lib/database";
