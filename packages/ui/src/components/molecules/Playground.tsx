@@ -2,6 +2,7 @@ import {
   RequestSection,
   ResponseSection,
   useRequestState,
+  ResizableSplit,
 } from "@freestyle/ui";
 import { useState, useCallback } from "react";
 
@@ -152,26 +153,38 @@ export const Playground = () => {
       onRequestStateChange({ isLoading: false });
     }
   }, [requestState, onRequestStateChange]);
-  return (
-    <>
-      <RequestSection
-        requestState={requestState}
-        onRequestStateChange={onRequestStateChange}
-        onMakeRequest={makeRequest}
-      />
 
-      <div className="px-4 border-t -mx-4 mt-2">
-        <ResponseSection
-          response={response}
-          responseType={responseType}
-          responseHeader={responseHeader}
-          isLoading={requestState.isLoading}
-          requestTime={requestTime}
-          responseSize={responseSize}
-          statusCode={statusCode}
-          statusText={statusText}
+  return (
+    <ResizableSplit
+      initialSplit={50}
+      minSize={150}
+      className="h-full"
+      splitterClassName="border-t border-b"
+    >
+      {/* Request Panel */}
+      <div className="h-full overflow-auto">
+        <RequestSection
+          requestState={requestState}
+          onRequestStateChange={onRequestStateChange}
+          onMakeRequest={makeRequest}
         />
       </div>
-    </>
+
+      {/* Response Panel */}
+      <div className="h-full overflow-auto">
+        <div className="px-4 border-t -mx-4">
+          <ResponseSection
+            response={response}
+            responseType={responseType}
+            responseHeader={responseHeader}
+            isLoading={requestState.isLoading}
+            requestTime={requestTime}
+            responseSize={responseSize}
+            statusCode={statusCode}
+            statusText={statusText}
+          />
+        </div>
+      </div>
+    </ResizableSplit>
   );
 };

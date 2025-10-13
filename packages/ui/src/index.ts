@@ -15,6 +15,7 @@ export * from "./components/molecules/CollectionTree";
 export * from "./components/molecules/RequestSection";
 export * from "./components/molecules/ResponseSection";
 export * from "./components/molecules/Playground";
+export * from "./components/molecules/ResizableSplit";
 
 // Export types
 export * from "./types/api";

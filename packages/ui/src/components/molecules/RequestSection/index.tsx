@@ -98,7 +98,7 @@ export const RequestSection = ({
   );
 
   return (
-    <div className={`min-h-[300px] ${className}`}>
+    <div className={`h-full flex flex-col ${className}`}>
       <div className="p-4">
         <div className="flex items-center gap-2">
           <Select
@@ -174,7 +174,7 @@ export const RequestSection = ({
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
-        className="flex flex-col"
+        className="flex flex-col flex-1"
       >
         <div className="flex items-center border-b px-4 -mx-4">
           <TabsList className="h-10 p-0 bg-transparent" role="tablist">
@@ -221,7 +221,7 @@ export const RequestSection = ({
 
         <TabsContent
           value="params"
-          className="flex-1 px-4"
+          className="flex-1 px-4 overflow-auto"
           id="params-panel"
           role="tabpanel"
           aria-labelledby="params-tab"
@@ -373,7 +373,7 @@ export const RequestSection = ({
 
         <TabsContent
           value="headers"
-          className="flex-1 px-4"
+          className="flex-1 px-4 overflow-auto"
           id="headers-panel"
           role="tabpanel"
           aria-labelledby="headers-tab"
@@ -525,7 +525,7 @@ export const RequestSection = ({
 
         <TabsContent
           value="body"
-          className="flex-1 px-4"
+          className="flex-1 px-4 overflow-auto"
           id="body-panel"
           role="tabpanel"
           aria-labelledby="body-tab"
