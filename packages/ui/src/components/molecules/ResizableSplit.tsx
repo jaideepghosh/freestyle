@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
+import { GripHorizontal } from "lucide-react";
 
 interface ResizableSplitProps {
   children: [React.ReactNode, React.ReactNode];
@@ -97,7 +98,7 @@ export const ResizableSplit: React.FC<ResizableSplitProps> = ({
         style={{ height: "4px" }}
         onMouseDown={handleMouseDown}
       >
-        <div className="w-8 h-1 bg-gray-400 rounded-full"></div>
+        <GripHorizontal className="h-5 w-8 text-gray-500 z-4" />
       </div>
 
       {/* Bottom Panel */}
