@@ -3,6 +3,7 @@ import {
   ResponseSection,
   useRequestState,
   ResizableSplit,
+  Request,
 } from "@freestyle/ui";
 import { useState, useCallback } from "react";
 import { FolderSelectionDialog } from "./FolderSelectionDialog";
@@ -10,7 +11,15 @@ import { Toaster } from "../ui/sonner";
 import { databaseService } from "../../lib/database";
 import { toast } from "sonner";
 
-export const Playground = () => {
+interface PlaygroundProps {
+  onCollectionSaved?: () => void;
+  initialRequest?: Request;
+}
+
+export const Playground = ({
+  onCollectionSaved,
+  initialRequest,
+}: PlaygroundProps = {}) => {
   const [response, setResponse] = useState<string | null>(null);
   const [responseType, setResponseType] = useState<
     "json" | "html" | "text" | null
@@ -24,19 +33,68 @@ export const Playground = () => {
   const [statusText, setStatusText] = useState<string | undefined>(undefined);
   const [showFolderDialog, setShowFolderDialog] = useState(false);
 
+  // Function to convert Request to RequestState format
+  const convertRequestToState = (request: Request) => {
+    let headers: any[] = [];
+    try {
+      const parsedHeaders = JSON.parse(request.headers || "{}");
+      headers = Object.entries(parsedHeaders).map(([key, value], index) => ({
+        id: `header-${index}`,
+        key,
+        value: value as string,
+        description: "",
+        enabled: true,
+      }));
+    } catch (error) {
+      console.error("Failed to parse headers:", error);
+    }
+
+    return {
+      config: {
+        url: request.url,
+        method: request.method as any,
+        headers: {},
+        timeout: 30000,
+      },
+      headers,
+      queryParams: [
+        { id: "param-1", key: "", value: "", description: "", enabled: true },
+      ],
+      bodyType: request.body ? "raw" : ("none" as any),
+      formData: [
+        {
+          id: "form-1",
+          key: "",
+          value: "",
+          type: "Text" as any,
+          description: "",
+          enabled: true,
+        },
+      ],
+      rawContent: request.body || "",
+      rawFormat: "JSON" as any,
+      isLoading: false,
+      error: null,
+    };
+  };
+
   // Use the new request state management
   const {
     state: requestState,
     updateState: onRequestStateChange,
     validation,
-  } = useRequestState({
-    config: {
-      url: "https://jsonplaceholder.typicode.com/posts",
-      method: "GET",
-      headers: {},
-      timeout: 30000,
-    },
-  });
+  } = useRequestState(
+    initialRequest
+      ? convertRequestToState(initialRequest)
+      : {
+          config: {
+            url: "https://jsonplaceholder.typicode.com/posts",
+            method: "GET",
+            headers: {},
+            timeout: 30000,
+          },
+        }
+  );
 
   const makeRequest = useCallback(async () => {
     onRequestStateChange({ isLoading: true, error: null });
@@ -250,6 +308,11 @@ export const Playground = () => {
         toast.success("Request saved successfully", {
           description: `Saved to ${folderName}`,
         });
+
+        // Refresh collections if callback provided
+        if (onCollectionSaved) {
+          onCollectionSaved();
+        }
       } catch (err) {
         console.error("Save request to folder error:", err);
         toast.error("Failed to save request", {
