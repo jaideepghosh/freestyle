@@ -10,6 +10,7 @@ export * from "./components/ui/scroll-area";
 export * from "./components/ui/select";
 export * from "./components/ui/separator";
 export * from "./components/ui/tabs";
+export * from "./components/ui/sonner";
 
 export * from "./components/molecules/CollectionTree";
 export * from "./components/molecules/RequestSection";
