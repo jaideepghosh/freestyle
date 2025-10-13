@@ -312,23 +312,24 @@ export default function RequestBodyConfig({
               </div>
             </div>
 
-            {validationErrors.length > 0 && (
+            {/* {validationErrors.length > 0 && (
               <Alert variant="destructive" className="mb-2">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                   {validationErrors.join(", ")}
                 </AlertDescription>
               </Alert>
-            )}
+            )} */}
 
             <div className="relative">
               <textarea
                 value={rawContent}
                 onChange={(e) => handleRawContentChange(e.target.value)}
                 placeholder="Paste your raw request body here..."
-                className={`w-full h-64 px-4 py-2 border font-mono text-sm focus:outline-none ${
-                  showJsonValidation && !isJsonValid ? "border-red-500" : ""
-                }`}
+                className={`w-full h-64 px-4 py-2 border font-mono text-sm focus:outline-none`}
+                // className={`w-full h-64 px-4 py-2 border font-mono text-sm focus:outline-none ${
+                //   showJsonValidation && !isJsonValid ? "border-red-500" : ""
+                // }`}
                 aria-label="Raw request body content"
                 aria-invalid={showJsonValidation && !isJsonValid}
               />
