@@ -156,6 +156,48 @@ class DatabaseService {
     );
   }
 
+  async updateRequest(
+    requestId: string,
+    updates: {
+      name?: string;
+      method?: string;
+      url?: string;
+      headers?: Record<string, string>;
+      queryParams?: Record<string, string>;
+      body?: string | null;
+    }
+  ): Promise<Request> {
+    await this.initialize();
+
+    const data = this.getStorageData();
+    const requestIndex = data.requests.findIndex((req) => req.id === requestId);
+
+    if (requestIndex === -1) {
+      throw new Error(`Request with id ${requestId} not found`);
+    }
+
+    const existingRequest = data.requests[requestIndex];
+    const now = new Date().toISOString();
+
+    const updatedRequest: Request = {
+      ...existingRequest,
+      ...(updates.name && { name: updates.name }),
+      ...(updates.method && { method: updates.method }),
+      ...(updates.url && { url: updates.url }),
+      ...(updates.headers && { headers: JSON.stringify(updates.headers) }),
+      ...(updates.queryParams && {
+        query_params: JSON.stringify(updates.queryParams),
+      }),
+      ...(updates.body !== undefined && { body: updates.body }),
+      updated_at: now,
+    } as Request;
+
+    data.requests[requestIndex] = updatedRequest;
+    this.saveStorageData(data);
+
+    return updatedRequest;
+  }
+
   async saveResponse(responseData: {
     requestId: string;
     name?: string;
