@@ -36,10 +36,12 @@ export const Playground = ({
   // Function to convert Request to RequestState format
   const convertRequestToState = (request: Request) => {
     let headers: any[] = [];
+    let queryParams: any[] = [];
+
     try {
       const parsedHeaders = JSON.parse(request.headers || "{}");
       headers = Object.entries(parsedHeaders).map(([key, value], index) => ({
-        id: `header-${index}`,
+        id: `header-${Date.now()}-${index}`,
         key,
         value: value as string,
         description: "",
@@ -47,6 +49,47 @@ export const Playground = ({
       }));
     } catch (error) {
       console.error("Failed to parse headers:", error);
+    }
+
+    try {
+      const parsedQueryParams = JSON.parse(request.query_params || "{}");
+      queryParams = Object.entries(parsedQueryParams).map(
+        ([key, value], index) => ({
+          id: `param-${Date.now()}-${index}`,
+          key,
+          value: value as string,
+          description: "",
+          enabled: true,
+        })
+      );
+    } catch (error) {
+      console.error("Failed to parse query params:", error);
+    }
+
+    // If no query params were parsed, add an empty one
+    if (queryParams.length === 0) {
+      queryParams = [
+        {
+          id: `param-${Date.now()}-0`,
+          key: "",
+          value: "",
+          description: "",
+          enabled: true,
+        },
+      ];
+    }
+
+    // If no headers were parsed, add an empty one
+    if (headers.length === 0) {
+      headers = [
+        {
+          id: `header-${Date.now()}-0`,
+          key: "",
+          value: "",
+          description: "",
+          enabled: true,
+        },
+      ];
     }
 
     return {
@@ -57,13 +100,11 @@ export const Playground = ({
         timeout: 30000,
       },
       headers,
-      queryParams: [
-        { id: "param-1", key: "", value: "", description: "", enabled: true },
-      ],
+      queryParams,
       bodyType: request.body ? "raw" : ("none" as any),
       formData: [
         {
-          id: "form-1",
+          id: `form-${Date.now()}-0`,
           key: "",
           value: "",
           type: "Text" as any,
@@ -256,6 +297,14 @@ export const Playground = ({
             headers[h.key] = h.value;
           });
 
+        // Build query parameters object
+        const queryParams: Record<string, string> = {};
+        requestState.queryParams
+          .filter((p) => p.enabled && p.key.trim())
+          .forEach((p) => {
+            queryParams[p.key] = p.value;
+          });
+
         // Build request body
         let body: string | null = null;
         if (requestState.bodyType === "raw" && requestState.rawContent) {
@@ -301,6 +350,7 @@ export const Playground = ({
           method: requestState.config.method,
           url: requestState.config.url,
           headers,
+          queryParams,
           body,
         });
 

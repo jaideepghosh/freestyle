@@ -12,6 +12,7 @@ export interface Request {
   method: string;
   url: string;
   headers: string;
+  query_params: string;
   body: string | null;
   created_at: string;
   updated_at: string;
@@ -112,6 +113,7 @@ class DatabaseService {
     method: string;
     url: string;
     headers: Record<string, string>;
+    queryParams: Record<string, string>;
     body: string | null;
   }): Promise<Request> {
     await this.initialize();
@@ -126,6 +128,7 @@ class DatabaseService {
       method: requestData.method,
       url: requestData.url,
       headers: JSON.stringify(requestData.headers),
+      query_params: JSON.stringify(requestData.queryParams),
       body: requestData.body,
       created_at: now,
       updated_at: now,
