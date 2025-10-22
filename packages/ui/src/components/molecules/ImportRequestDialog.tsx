@@ -21,6 +21,7 @@ import {
   FieldGroup,
   databaseService,
   Folder,
+  Request,
 } from "@freestyle/ui";
 import { ChevronRight, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
@@ -29,6 +30,7 @@ import { Editor } from "@monaco-editor/react";
 interface ImportRequestDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  onImportWithoutSaving?: (request: Request) => void;
 }
 
 type ParsedCurl = {
@@ -151,6 +153,7 @@ function parseCurlCommand(input: string): ParsedCurl {
 export const ImportRequestDialog: React.FC<ImportRequestDialogProps> = ({
   isOpen,
   onClose,
+  onImportWithoutSaving,
 }) => {
   const [curlText, setCurlText] = useState("");
   const [curlError, setCurlError] = useState<string | null>(null);
@@ -174,6 +177,20 @@ export const ImportRequestDialog: React.FC<ImportRequestDialogProps> = ({
           console.error(e);
         }
       })();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset all form-related states when dialog is closed
+      setCurlText("");
+      setCurlError(null);
+      setParsed(null);
+      setRequestName("");
+      setSearchQuery("");
+      setCurrentFolderId(null);
+      setFolderPath([]);
+      setSelectedFolderId(null);
     }
   }, [isOpen]);
 
@@ -258,7 +275,20 @@ export const ImportRequestDialog: React.FC<ImportRequestDialogProps> = ({
 
   const handleImportWithoutSaving = async () => {
     if (!parsed) return;
+    const request: Request = {
+      id: `temp-${Date.now()}`, // Temporary unique ID
+      name: requestName || `Imported Request (${parsed.method} ${parsed.url})`,
+      method: parsed.method,
+      url: parsed.url,
+      headers: JSON.stringify(parsed.headers),
+      query_params: JSON.stringify(parsed.queryParams),
+      body: parsed.body || null,
+      folder_id: null, // No folder since it's not saved
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
     toast.success("Imported request (not saved)");
+    onImportWithoutSaving?.(request);
     onClose();
   };
 
