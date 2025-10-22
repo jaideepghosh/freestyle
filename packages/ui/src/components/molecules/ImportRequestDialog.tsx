@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  cURLParser,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -40,115 +41,6 @@ type ParsedCurl = {
   queryParams: Record<string, string>;
   body: string | null;
 };
-
-// Lightweight cURL parser (supports common flags: -X, -H, --header, -d/--data/--data-raw/--data-binary)
-function parseCurlCommand(input: string): ParsedCurl {
-  if (!input.trim().toLowerCase().startsWith("curl ")) {
-    throw new Error("Input must start with curl");
-  }
-
-  const tokens: string[] = [];
-  let buf = "";
-  let inSingle = false;
-  let inDouble = false;
-  for (let i = 0; i < input.length; i++) {
-    const ch = input[i]!; // assert non-null so .test(ch) won't error
-    if (ch === "'" && !inDouble) {
-      inSingle = !inSingle;
-      continue;
-    }
-    if (ch === '"' && !inSingle) {
-      inDouble = !inDouble;
-      continue;
-    }
-    if (!inSingle && !inDouble && /\s/.test(ch)) {
-      if (buf) {
-        tokens.push(buf);
-        buf = "";
-      }
-    } else {
-      buf += ch;
-    }
-  }
-  if (buf) tokens.push(buf);
-
-  // Remove initial curl token
-  if (tokens[0]!.toLowerCase() === "curl") {
-    tokens.shift();
-  }
-
-  let method = "GET";
-  let url = "";
-  const headers: Record<string, string> = {};
-  let body: string | null = null;
-
-  const takeValue = (i: number, flag: string): [number, string] => {
-    // Supports --flag=value or --flag value
-    const token = tokens[i]!;
-    const eqIndex = token.indexOf("=");
-    if (eqIndex !== -1) {
-      return [i, token.slice(eqIndex + 1)];
-    }
-    if (i + 1 < tokens.length) {
-      return [i + 1, tokens[i + 1]!];
-    }
-    throw new Error(`Expected value after ${flag}`);
-  };
-
-  for (let i = 0; i < tokens.length; i++) {
-    const t = tokens[i]!;
-    const lower = t.toLowerCase();
-    if (lower === "-x" || lower === "--request") {
-      const [nextIdx, val] = takeValue(i, t);
-      method = val.toUpperCase();
-      i = nextIdx;
-      continue;
-    }
-    if (lower === "-h" || lower === "--header") {
-      const [nextIdx, val] = takeValue(i, t);
-      const sep = val.indexOf(":");
-      if (sep === -1) throw new Error("Invalid header format");
-      const key = val.slice(0, sep).trim();
-      const value = val.slice(sep + 1).trim();
-      if (key) headers[key] = value;
-      i = nextIdx;
-      continue;
-    }
-    if (
-      lower === "-d" ||
-      lower === "--data" ||
-      lower === "--data-raw" ||
-      lower === "--data-binary"
-    ) {
-      const [nextIdx, val] = takeValue(i, t);
-      body = val;
-      if (method === "GET") method = "POST"; // default when data present
-      i = nextIdx;
-      continue;
-    }
-    if (!t.startsWith("-")) {
-      // Assume this is the URL
-      url = t;
-      continue;
-    }
-  }
-
-  if (!url) throw new Error("URL not found in curl");
-
-  // Extract query params
-  const queryParams: Record<string, string> = {};
-  try {
-    const u = new URL(url.replace(/^\"|\"$/g, ""));
-    url = `${u.origin}${u.pathname}`;
-    u.searchParams.forEach((v, k) => {
-      queryParams[k] = v;
-    });
-  } catch {
-    // If URL constructor fails, keep raw url
-  }
-
-  return { method, url, headers, queryParams, body };
-}
 
 export const ImportRequestDialog: React.FC<ImportRequestDialogProps> = ({
   isOpen,
@@ -264,7 +156,7 @@ export const ImportRequestDialog: React.FC<ImportRequestDialogProps> = ({
       return;
     }
     try {
-      const p = parseCurlCommand(val.trim());
+      const p = cURLParser(val.trim());
       setParsed(p);
       setCurlError(null);
     } catch (e: any) {
