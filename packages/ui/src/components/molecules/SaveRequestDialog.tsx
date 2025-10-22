@@ -17,8 +17,17 @@ import {
   CommandItem,
   databaseService,
   Folder,
+  Field,
+  FieldLabel,
+  FieldContent,
+  FieldGroup,
 } from "@freestyle/ui";
-import { FolderPlus } from "lucide-react";
+import {
+  FolderPlus,
+  ChevronRight,
+  ChevronLeft,
+  FolderOpen,
+} from "lucide-react";
 
 interface SaveRequestDialogProps {
   isOpen: boolean;
@@ -43,6 +52,8 @@ export const SaveRequestDialog: React.FC<SaveRequestDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [folderPath, setFolderPath] = useState<Folder[]>([]);
 
   // Load folders when dialog opens
   useEffect(() => {
@@ -63,13 +74,86 @@ export const SaveRequestDialog: React.FC<SaveRequestDialogProps> = ({
     }
   }, []);
 
+  // Build folder tree structure
+  const buildFolderTree = useCallback((folders: Folder[]) => {
+    const folderMap = new Map<string, Folder & { children: Folder[] }>();
+    const rootFolders: (Folder & { children: Folder[] })[] = [];
+
+    // Initialize all folders with children array
+    folders.forEach((folder) => {
+      folderMap.set(folder.id, { ...folder, children: [] });
+    });
+
+    // Build the tree structure
+    folders.forEach((folder) => {
+      const folderWithChildren = folderMap.get(folder.id)!;
+      if (folder.parent_id) {
+        const parent = folderMap.get(folder.parent_id);
+        if (parent) {
+          parent.children.push(folderWithChildren);
+        }
+      } else {
+        rootFolders.push(folderWithChildren);
+      }
+    });
+
+    return rootFolders;
+  }, []);
+
+  // Get folders in current directory
+  const getCurrentFolderContents = useCallback(
+    (folders: Folder[], currentFolderId: string | null) => {
+      return folders.filter((folder) => folder.parent_id === currentFolderId);
+    },
+    []
+  );
+
+  // Navigate to a folder
+  const navigateToFolder = useCallback(
+    (folderId: string | null) => {
+      setCurrentFolderId(folderId);
+      const folder = folders.find((f) => f.id === folderId);
+
+      if (folderId && folder) {
+        // Build path to this folder
+        const path: Folder[] = [];
+        let currentId: string | null = folderId;
+
+        while (currentId) {
+          const currentFolder = folders.find((f) => f.id === currentId);
+          if (currentFolder) {
+            path.unshift(currentFolder);
+            currentId = currentFolder.parent_id || null;
+          } else {
+            break;
+          }
+        }
+
+        setFolderPath(path);
+      } else {
+        setFolderPath([]);
+      }
+    },
+    [folders]
+  );
+
+  // Navigate back to parent folder
+  const navigateBack = useCallback(() => {
+    if (folderPath.length > 0) {
+      const parentFolder = folderPath[folderPath.length - 2];
+      const parentId = parentFolder ? parentFolder.id : null;
+      navigateToFolder(parentId);
+    }
+  }, [folderPath, navigateToFolder]);
+
   const handleCreateFolder = useCallback(async () => {
     if (!newFolderName.trim()) return;
 
     try {
       setIsLoading(true);
       const newFolder = await databaseService.createFolder(
-        newFolderName.trim()
+        newFolderName.trim(),
+        currentFolderId
       );
       setFolders((prev) => [...prev, newFolder]);
       setSelectedFolderId(newFolder.id);
@@ -80,7 +164,7 @@ export const SaveRequestDialog: React.FC<SaveRequestDialogProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [newFolderName]);
+  }, [newFolderName, currentFolderId]);
 
   const handleSave = useCallback(() => {
     if (!requestName.trim()) {
@@ -110,15 +194,44 @@ export const SaveRequestDialog: React.FC<SaveRequestDialogProps> = ({
     setSearchQuery("");
     setNewFolderName("");
     setShowNewFolderInput(false);
+    setCurrentFolderId(null);
+    setFolderPath([]);
     onClose();
   }, [onClose]);
 
-  // Filter folders based on search query
-  const filteredFolders = folders.filter((folder) =>
+  // Get current folder contents and filter based on search query
+  const currentFolderContents = getCurrentFolderContents(
+    folders,
+    currentFolderId
+  );
+  const filteredFolders = currentFolderContents.filter((folder) =>
     folder.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const selectedFolder = folders.find((f) => f.id === selectedFolderId);
+
+  // Build selected folder path for display
+  const getSelectedFolderPath = useCallback(
+    (folderId: string | null) => {
+      if (!folderId) return "Root";
+
+      const path: string[] = [];
+      let currentId: string | null = folderId;
+
+      while (currentId) {
+        const folder = folders.find((f) => f.id === currentId);
+        if (folder) {
+          path.unshift(folder.name);
+          currentId = folder.parent_id || null;
+        } else {
+          break;
+        }
+      }
+
+      return path.join(" / ");
+    },
+    [folders]
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -127,113 +240,178 @@ export const SaveRequestDialog: React.FC<SaveRequestDialogProps> = ({
           <DialogTitle>Save Request</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <FieldGroup>
           {/* Request Name Input */}
-          <div className="space-y-2">
-            <label htmlFor="request-name" className="text-sm font-medium">
-              Request name
-            </label>
-            <Input
-              id="request-name"
-              placeholder="Enter request name"
-              value={requestName}
-              onChange={(e) => setRequestName(e.target.value)}
-              autoFocus
-            />
-          </div>
+          <Field>
+            <FieldLabel htmlFor="request-name">Request name</FieldLabel>
+            <FieldContent>
+              <Input
+                id="request-name"
+                placeholder="Enter request name"
+                value={requestName}
+                onChange={(e) => setRequestName(e.target.value)}
+                autoFocus
+              />
+            </FieldContent>
+          </Field>
 
           {/* Description Input */}
-          <div className="space-y-2">
-            <label htmlFor="description" className="text-sm font-medium">
+          <Field>
+            <FieldLabel htmlFor="description">
               Description (Optional)
-            </label>
-            <Textarea
-              id="description"
-              placeholder="Enter description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-            />
-          </div>
+            </FieldLabel>
+            <FieldContent>
+              <Textarea
+                id="description"
+                placeholder="Enter description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+              />
+            </FieldContent>
+          </Field>
 
           {/* Save To Collection Selection */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Save To</label>
-            <Command className="border rounded-md">
-              <CommandInput
-                placeholder="Search collections..."
-                value={searchQuery}
-                onValueChange={setSearchQuery}
-              />
-              <CommandList className="max-h-48">
-                <CommandEmpty>No collections found.</CommandEmpty>
-                {filteredFolders.map((folder) => (
-                  <CommandItem
-                    key={folder.id}
-                    value={folder.name}
-                    onSelect={() => setSelectedFolderId(folder.id)}
-                    className="flex items-center justify-between"
-                  >
-                    <span>{folder.name}</span>
-                    {selectedFolderId === folder.id && (
-                      <div className="h-2 w-2 rounded-full bg-primary" />
-                    )}
-                  </CommandItem>
-                ))}
-              </CommandList>
-            </Command>
-
-            {/* Show selected folder */}
-            {selectedFolder && (
-              <div className="text-sm text-muted-foreground">
-                Selected: {selectedFolder.name}
+          <Field>
+            <FieldLabel>
+              {/* Breadcrumb Navigation / Selected Folder Path */}
+              <div className="flex items-center gap-2 text-sm">
+                Save To
+                {selectedFolder ? (
+                  <div className="flex items-center gap-1 text-xs">
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => navigateToFolder(null)}
+                        className="hover:text-foreground transition-colors"
+                      >
+                        Root
+                      </button>
+                      {getSelectedFolderPath(selectedFolderId)
+                        .split(" / ")
+                        .map((folderName, index) => {
+                          // Find the folder ID for this name in the path
+                          const folderInPath = folderPath[index];
+                          return (
+                            <React.Fragment key={index}>
+                              <ChevronRight className="h-3 w-3" />
+                              <button
+                                onClick={() =>
+                                  navigateToFolder(folderInPath?.id || null)
+                                }
+                                className="cursor-pointer hover:underline hover:text-foreground transition-colors"
+                              >
+                                {folderName}
+                              </button>
+                            </React.Fragment>
+                          );
+                        })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-foreground text-xs">
+                    <button
+                      onClick={() => navigateToFolder(null)}
+                      className="hover:text-muted-foreground transition-colors"
+                    >
+                      Root
+                    </button>
+                    {folderPath.map((folder, index) => (
+                      <React.Fragment key={folder.id}>
+                        <ChevronRight className="h-3 w-3" />
+                        <button
+                          onClick={() => navigateToFolder(folder.id)}
+                          className="hover:text-foreground transition-colors"
+                        >
+                          {folder.name}
+                        </button>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </FieldLabel>
+            <FieldContent>
+              <Command className="border">
+                <CommandInput
+                  placeholder="Search folders..."
+                  value={searchQuery}
+                  onValueChange={setSearchQuery}
+                />
+                <CommandList className="max-h-48">
+                  <CommandEmpty>No folders found.</CommandEmpty>
+                  {filteredFolders.map((folder) => (
+                    <CommandItem
+                      key={folder.id}
+                      value={folder.name}
+                      onSelect={() => {
+                        setSelectedFolderId(folder.id);
+                        navigateToFolder(folder.id);
+                      }}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                        <span>{folder.name}</span>
+                      </div>
+                      {selectedFolderId === folder.id && (
+                        <div className="h-2 w-2 bg-primary" />
+                      )}
+                    </CommandItem>
+                  ))}
+                </CommandList>
+              </Command>
+            </FieldContent>
+          </Field>
 
           {/* New Folder Input (shown when New Folder button is clicked) */}
           {showNewFolderInput && (
-            <div className="space-y-2">
-              <label htmlFor="new-folder-name" className="text-sm font-medium">
-                New Folder Name
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  id="new-folder-name"
-                  placeholder="Enter folder name"
-                  value={newFolderName}
-                  onChange={(e) => setNewFolderName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleCreateFolder();
-                    }
-                    if (e.key === "Escape") {
+            <Field>
+              <FieldLabel htmlFor="new-folder-name">New Folder Name</FieldLabel>
+              <FieldContent>
+                <div className="text-xs text-muted-foreground mb-2">
+                  Will be created in:{" "}
+                  {currentFolderId
+                    ? getSelectedFolderPath(currentFolderId)
+                    : "Root"}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    id="new-folder-name"
+                    placeholder="Enter folder name"
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleCreateFolder();
+                      }
+                      if (e.key === "Escape") {
+                        setShowNewFolderInput(false);
+                        setNewFolderName("");
+                      }
+                    }}
+                  />
+                  <Button
+                    onClick={handleCreateFolder}
+                    disabled={!newFolderName.trim() || isLoading}
+                    size="sm"
+                  >
+                    Create
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
                       setShowNewFolderInput(false);
                       setNewFolderName("");
-                    }
-                  }}
-                />
-                <Button
-                  onClick={handleCreateFolder}
-                  disabled={!newFolderName.trim() || isLoading}
-                  size="sm"
-                >
-                  Create
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowNewFolderInput(false);
-                    setNewFolderName("");
-                  }}
-                  size="sm"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
+                    }}
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </FieldContent>
+            </Field>
           )}
-        </div>
+        </FieldGroup>
 
         <DialogFooter className="flex justify-between">
           <Button
@@ -244,7 +422,7 @@ export const SaveRequestDialog: React.FC<SaveRequestDialogProps> = ({
             <FolderPlus className="h-4 w-4" />
             New Folder
           </Button>
-          <div className="flex gap-2">
+          <div className="flex gap-2 ml-auto">
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
