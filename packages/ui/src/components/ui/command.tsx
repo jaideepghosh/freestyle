@@ -11,7 +11,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@freestyle/ui/components/ui/dialog";
+} from "./dialog";
 
 function Command({
   className,

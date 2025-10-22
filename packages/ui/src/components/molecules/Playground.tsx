@@ -1,3 +1,5 @@
+"use client";
+
 import {
   RequestSection,
   ResponseSection,
@@ -5,8 +7,8 @@ import {
   ResizableSplit,
   Request,
 } from "@freestyle/ui";
-import { useState, useCallback } from "react";
-import { FolderSelectionDialog } from "./FolderSelectionDialog";
+import React, { useState, useCallback } from "react";
+import { SaveRequestDialog } from "./SaveRequestDialog";
 import { Toaster } from "../ui/sonner";
 import { databaseService } from "../../lib/database";
 import { toast } from "sonner";
@@ -31,7 +33,17 @@ export const Playground = ({
   );
   const [statusCode, setStatusCode] = useState<number | undefined>(undefined);
   const [statusText, setStatusText] = useState<string | undefined>(undefined);
-  const [showFolderDialog, setShowFolderDialog] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+
+  // Track if this is an existing saved request
+  const [currentRequestId, setCurrentRequestId] = useState<string | null>(
+    initialRequest?.id || null
+  );
+
+  // Reset current request ID when initialRequest changes (new request loaded)
+  React.useEffect(() => {
+    setCurrentRequestId(initialRequest?.id || null);
+  }, [initialRequest?.id]);
 
   // Function to convert Request to RequestState format
   const convertRequestToState = (request: Request) => {
@@ -268,15 +280,12 @@ export const Playground = ({
         return;
       }
 
-      // Check if we have a saved folder preference
-      const savedFolderId = localStorage.getItem("requestSaveFolder");
-
-      if (savedFolderId) {
-        // Use saved folder
-        await saveRequestToFolder(savedFolderId);
+      // If this is an existing saved request, update it directly
+      if (currentRequestId) {
+        await updateExistingRequest();
       } else {
-        // Show folder selection dialog
-        setShowFolderDialog(true);
+        // Show save dialog for new requests
+        setShowSaveDialog(true);
       }
     } catch (err) {
       console.error("Save request error:", err);
@@ -284,10 +293,84 @@ export const Playground = ({
         description: "An error occurred while saving the request",
       });
     }
-  }, [requestState]);
+  }, [requestState, currentRequestId]);
+
+  const updateExistingRequest = useCallback(async () => {
+    try {
+      if (!currentRequestId) return;
+
+      // Build headers object
+      const headers: Record<string, string> = {};
+      requestState.headers
+        .filter((h) => h.enabled && h.key.trim())
+        .forEach((h) => {
+          headers[h.key] = h.value;
+        });
+
+      // Build query parameters object
+      const queryParams: Record<string, string> = {};
+      requestState.queryParams
+        .filter((p) => p.enabled && p.key.trim())
+        .forEach((p) => {
+          queryParams[p.key] = p.value;
+        });
+
+      // Build request body
+      let body: string | null = null;
+      if (requestState.bodyType === "raw" && requestState.rawContent) {
+        body = requestState.rawContent;
+      } else if (
+        requestState.bodyType === "form-data" &&
+        requestState.formData.length > 0
+      ) {
+        const formData = requestState.formData
+          .filter((f) => f.enabled && f.key.trim())
+          .map((f) => `${f.key}=${f.value}`)
+          .join("&");
+        body = formData;
+      } else if (
+        requestState.bodyType === "x-www-form-urlencoded" &&
+        requestState.formData.length > 0
+      ) {
+        const formData = requestState.formData
+          .filter((f) => f.enabled && f.key.trim())
+          .map(
+            (f) => `${encodeURIComponent(f.key)}=${encodeURIComponent(f.value)}`
+          )
+          .join("&");
+        body = formData;
+      }
+
+      await databaseService.updateRequest(currentRequestId, {
+        method: requestState.config.method,
+        url: requestState.config.url,
+        headers,
+        queryParams,
+        body,
+      });
+
+      toast.success("Request updated successfully", {
+        description: "Your changes have been saved",
+      });
+
+      // Refresh collections if callback provided
+      if (onCollectionSaved) {
+        onCollectionSaved();
+      }
+    } catch (err) {
+      console.error("Update request error:", err);
+      toast.error("Failed to update request", {
+        description: "An error occurred while updating the request",
+      });
+    }
+  }, [currentRequestId, requestState, onCollectionSaved]);
 
   const saveRequestToFolder = useCallback(
-    async (folderId: string | null) => {
+    async (data: {
+      name: string;
+      description?: string;
+      folderId: string | null;
+    }) => {
       try {
         // Build headers object
         const headers: Record<string, string> = {};
@@ -332,21 +415,9 @@ export const Playground = ({
           body = formData;
         }
 
-        // Generate request name from URL
-        let requestName = `${requestState.config.method.toUpperCase()} Request`;
-        try {
-          if (requestState.config.url) {
-            const url = new URL(requestState.config.url);
-            requestName = `${requestState.config.method.toUpperCase()} ${url.pathname}`;
-          }
-        } catch (error) {
-          // If URL is invalid, use a fallback name
-          requestName = `${requestState.config.method.toUpperCase()} ${requestState.config.url || "Request"}`;
-        }
-
-        await databaseService.saveRequest({
-          name: requestName,
-          folderId,
+        const savedRequest = await databaseService.saveRequest({
+          name: data.name,
+          folderId: data.folderId,
           method: requestState.config.method,
           url: requestState.config.url,
           headers,
@@ -354,7 +425,10 @@ export const Playground = ({
           body,
         });
 
-        const folderName = folderId ? "selected folder" : "Root";
+        // Set the current request ID so future saves will update instead of create
+        setCurrentRequestId(savedRequest.id);
+
+        const folderName = data.folderId ? "selected folder" : "Root";
         toast.success("Request saved successfully", {
           description: `Saved to ${folderName}`,
         });
@@ -370,20 +444,17 @@ export const Playground = ({
         });
       }
     },
-    [requestState]
+    [requestState, onCollectionSaved]
   );
 
-  const handleFolderSelect = useCallback(
-    async (folderId: string | null, folderName: string) => {
-      // Save folder preference to localStorage
-      if (folderId) {
-        localStorage.setItem("requestSaveFolder", folderId);
-      } else {
-        localStorage.removeItem("requestSaveFolder");
-      }
-
-      await saveRequestToFolder(folderId);
-      setShowFolderDialog(false);
+  const handleSaveDialogSave = useCallback(
+    async (data: {
+      name: string;
+      description?: string;
+      folderId: string | null;
+    }) => {
+      await saveRequestToFolder(data);
+      setShowSaveDialog(false);
     },
     [saveRequestToFolder]
   );
@@ -423,11 +494,11 @@ export const Playground = ({
         </div>
       </ResizableSplit>
 
-      {/* Folder Selection Dialog */}
-      <FolderSelectionDialog
-        isOpen={showFolderDialog}
-        onClose={() => setShowFolderDialog(false)}
-        onSelect={handleFolderSelect}
+      {/* Save Request Dialog */}
+      <SaveRequestDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        onSave={handleSaveDialogSave}
       />
 
       {/* Sonner Toaster */}
