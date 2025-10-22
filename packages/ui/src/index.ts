@@ -34,6 +34,7 @@ export * from "./hooks/useRequestState";
 // Export utilities
 export * from "./utils/validation";
 export * from "./utils/http";
+export * from "./utils/curl-parser";
 
 // Export database service
 export * from "./lib/database";

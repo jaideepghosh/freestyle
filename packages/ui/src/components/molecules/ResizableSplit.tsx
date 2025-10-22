@@ -82,7 +82,7 @@ export const ResizableSplit: React.FC<ResizableSplitProps> = ({
     <div
       ref={containerRef}
       className={`flex flex-col h-full ${className}`}
-      style={{ height: "100vh" }}
+      style={{ height: "calc(100vh - 50px)" }}
     >
       {/* Top Panel */}
       <div

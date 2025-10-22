@@ -241,6 +241,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
       <ImportRequestDialog
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
+        onImportWithoutSaving={onRequestClick}
       />
     </div>
   );
