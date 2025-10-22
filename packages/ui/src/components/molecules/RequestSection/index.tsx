@@ -24,6 +24,9 @@ import {
   sanitizeInput,
 } from "@freestyle/ui";
 import RequestBodyConfig from "./RequestBodyConfig";
+import { CorsStatusIndicator } from "../CorsStatusIndicator";
+import { CorsProxySelector } from "../CorsProxySelector";
+import { CORSProxyService } from "../../../utils/http";
 import {
   RequestSectionProps,
   RequestHeader,
@@ -40,6 +43,8 @@ export const RequestSection = ({
   onSaveRequest,
   onShareRequest,
   className = "",
+  proxyService,
+  onProxyServiceChange,
 }: RequestSectionProps) => {
   const [activeTab, setActiveTab] = useState("params");
   const [showValidationErrors, setShowValidationErrors] = useState(false);
@@ -127,16 +132,25 @@ export const RequestSection = ({
               </SelectItem>
             </SelectContent>
           </Select>
-          <Input
-            placeholder="Enter URL"
-            className="flex-1"
-            value={requestState.config.url}
-            onChange={(e) => handleUrlChange(e.target.value)}
-            aria-label="Request URL"
-            aria-invalid={
-              showValidationErrors && !requestState.config.url.trim()
-            }
-          />
+          <div className="flex-1 flex flex-col gap-1">
+            <Input
+              placeholder="Enter URL"
+              className="w-full"
+              value={requestState.config.url}
+              onChange={(e) => handleUrlChange(e.target.value)}
+              aria-label="Request URL"
+              aria-invalid={
+                showValidationErrors && !requestState.config.url.trim()
+              }
+            />
+            <CorsStatusIndicator url={requestState.config.url} />
+            {proxyService && onProxyServiceChange && (
+              <CorsProxySelector
+                value={proxyService}
+                onChange={onProxyServiceChange}
+              />
+            )}
+          </div>
           <Button
             onClick={handleMakeRequest}
             disabled={requestState.isLoading}

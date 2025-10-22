@@ -18,6 +18,8 @@ export * from "./components/molecules/ResponseSection";
 export * from "./components/molecules/Playground";
 export * from "./components/molecules/ResizableSplit";
 export * from "./components/molecules/FolderSelectionDialog";
+export * from "./components/molecules/CorsStatusIndicator";
+export * from "./components/molecules/CorsProxySelector";
 
 // Export types
 export * from "./types/api";

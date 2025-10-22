@@ -10,6 +10,11 @@ import { FolderSelectionDialog } from "./FolderSelectionDialog";
 import { Toaster } from "../ui/sonner";
 import { databaseService } from "../../lib/database";
 import { toast } from "sonner";
+import {
+  makeProxyRequest,
+  isCrossOrigin,
+  CORSProxyService,
+} from "../../utils/http";
 
 interface PlaygroundProps {
   onCollectionSaved?: () => void;
@@ -32,6 +37,9 @@ export const Playground = ({
   const [statusCode, setStatusCode] = useState<number | undefined>(undefined);
   const [statusText, setStatusText] = useState<string | undefined>(undefined);
   const [showFolderDialog, setShowFolderDialog] = useState(false);
+  const [proxyService, setProxyService] = useState<CORSProxyService>(
+    CORSProxyService.ALL_ORIGINS
+  );
 
   // Function to convert Request to RequestState format
   const convertRequestToState = (request: Request) => {
@@ -170,26 +178,22 @@ export const Playground = ({
         : requestState.config.url;
 
       // Build request body based on body type
-      let body: string | FormData | undefined;
+      let body: any = undefined;
       if (requestState.bodyType === "raw" && requestState.rawContent) {
         body = requestState.rawContent;
       } else if (
         requestState.bodyType === "form-data" &&
         requestState.formData.length > 0
       ) {
-        const formData = new FormData();
+        // For form-data, we'll send as a JSON object for the proxy
+        const formDataObj: Record<string, string> = {};
         requestState.formData
           .filter((f) => f.enabled && f.key.trim())
           .forEach((f) => {
-            if (f.type === "File") {
-              // Handle file uploads - this would need file input handling
-              // For now, just add the value as text
-              formData.append(f.key, f.value);
-            } else {
-              formData.append(f.key, f.value);
-            }
+            formDataObj[f.key] = f.value;
           });
-        body = formData;
+        body = formDataObj;
+        headers["Content-Type"] = "multipart/form-data";
       } else if (
         requestState.bodyType === "x-www-form-urlencoded" &&
         requestState.formData.length > 0
@@ -204,10 +208,14 @@ export const Playground = ({
         headers["Content-Type"] = "application/x-www-form-urlencoded";
       }
 
-      const res = await fetch(url, {
+      // Use proxy request to bypass CORS
+      const proxyResponse = await makeProxyRequest({
+        url,
         method: requestState.config.method,
         headers,
         body,
+        timeout: requestState.config.timeout,
+        proxyService,
       });
 
       // Capture request timing
@@ -215,38 +223,30 @@ export const Playground = ({
       const duration = Math.round(endTime - startTime);
       setRequestTime(duration);
 
-      // Capture status code and text
-      setStatusCode(res.status);
-      setStatusText(res.statusText);
+      // Set response data from proxy
+      setStatusCode(proxyResponse.status);
+      setStatusText(proxyResponse.statusText);
+      setResponseHeader(proxyResponse.headers);
 
-      const contentType = res.headers.get("content-type");
+      // Determine response type and set response data
+      const contentType = proxyResponse.headers["content-type"] || "";
 
-      // Convert Headers object to a plain object
-      const headersObj: Record<string, string> = {};
-      res.headers.forEach((value, key) => {
-        headersObj[key] = value;
-      });
-      setResponseHeader(headersObj);
-
-      if (contentType?.includes("application/json")) {
-        const data = await res.json();
-        setResponse(data);
+      if (contentType.includes("application/json")) {
+        setResponse(proxyResponse.data);
         setResponseType("json");
         // Calculate response size for JSON
-        setResponseSize(new Blob([JSON.stringify(data)]).size);
-      } else if (contentType?.includes("text/html")) {
-        const html = await res.text();
-        setResponse(html);
+        setResponseSize(new Blob([JSON.stringify(proxyResponse.data)]).size);
+      } else if (contentType.includes("text/html")) {
+        setResponse(proxyResponse.data);
         setResponseType("html");
         // Calculate response size for HTML
-        setResponseSize(new Blob([html]).size);
+        setResponseSize(new Blob([proxyResponse.data]).size);
       } else {
         // fallback to text for other types like text/plain, XML, etc.
-        const text = await res.text();
-        setResponse(text);
+        setResponse(proxyResponse.data);
         setResponseType("text");
         // Calculate response size for text
-        setResponseSize(new Blob([text]).size);
+        setResponseSize(new Blob([proxyResponse.data]).size);
       }
     } catch (error) {
       const errorMessage =
@@ -403,6 +403,8 @@ export const Playground = ({
             onRequestStateChange={onRequestStateChange}
             onMakeRequest={makeRequest}
             onSaveRequest={handleSaveRequest}
+            proxyService={proxyService}
+            onProxyServiceChange={setProxyService}
           />
         </div>
 

@@ -67,6 +67,8 @@ export interface RequestSectionProps {
   onSaveRequest?: () => void;
   onShareRequest?: () => void;
   className?: string;
+  proxyService?: any;
+  onProxyServiceChange?: (service: any) => void;
 }
 
 export interface RequestBodyConfigProps {
