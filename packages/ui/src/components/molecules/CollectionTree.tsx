@@ -68,19 +68,15 @@ const CollectionItem = ({
     <div className={`text-sm ${level === 0 ? "border-b" : ""}`}>
       <div className="group relative">
         <div
-          className={`flex items-center w-full justify-start gap-2 rounded-none h-auto py-2 px-2 hover:bg-gray-100/90`}
+          className={`flex items-center w-full justify-start gap-2 rounded-none h-auto py-2 px-2 hover:bg-gray-100/90 cursor-pointer`}
           onClick={toggle}
           style={{ paddingLeft: 8 + level * 8 }} // Indent by level
         >
-          {hasChildren || hasRequests || loadingRequests ? (
-            <ChevronRight
-              className={`h-4 w-4 text-muted-foreground transform transition-transform ${
-                expanded ? "rotate-90" : ""
-              }`}
-            />
-          ) : (
-            <span style={{ width: 0, display: "inline-block" }} />
-          )}
+          <ChevronRight
+            className={`h-4 w-4 text-muted-foreground transform transition-transform duration-200 ${
+              expanded ? "rotate-90" : ""
+            }`}
+          />
 
           <Folder className="h-4 w-4 text-muted-foreground" />
           <span className="flex-1 text-left font-normal">
@@ -168,10 +164,42 @@ const CollectionItem = ({
   );
 };
 
+// Helper function to build tree structure from flat collection list
+const buildCollectionTree = (collections: Collection[]): Collection[] => {
+  const collectionMap = new Map<string, Collection>();
+  const rootCollections: Collection[] = [];
+
+  // First pass: create a map of all collections
+  collections.forEach((collection) => {
+    collectionMap.set(collection.id, { ...collection, children: [] });
+  });
+
+  // Second pass: build the tree structure
+  collections.forEach((collection) => {
+    const collectionWithChildren = collectionMap.get(collection.id)!;
+
+    if (collection.parent_id && collectionMap.has(collection.parent_id)) {
+      // This is a child collection
+      const parent = collectionMap.get(collection.parent_id)!;
+      if (!parent.children) {
+        parent.children = [];
+      }
+      parent.children.push(collectionWithChildren);
+    } else {
+      // This is a root collection
+      rootCollections.push(collectionWithChildren);
+    }
+  });
+
+  return rootCollections;
+};
+
 export const CollectionTree: React.FC<CollectionTreeProps> = ({
   collections,
   onRequestClick,
 }) => {
+  const treeCollections = buildCollectionTree(collections);
+
   return (
     <div className="w-80 border-r flex flex-col">
       {/* CollectionTree Header */}
@@ -195,7 +223,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
       {/* Collections List */}
       <ScrollArea className="flex-1">
         <div>
-          {collections.map((item, idx) => (
+          {treeCollections.map((item, idx) => (
             <CollectionItem
               key={idx}
               item={item}
