@@ -23,6 +23,7 @@ export * from "./components/molecules/Playground";
 export * from "./components/molecules/ResizableSplit";
 export * from "./components/molecules/FolderSelectionDialog";
 export * from "./components/molecules/SaveRequestDialog";
+export * from "./components/molecules/ImportRequestDialog";
 
 // Export types
 export * from "./types/api";

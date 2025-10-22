@@ -10,7 +10,13 @@ import {
   Folder,
   FileText,
 } from "lucide-react";
-import { Button, ScrollArea, databaseService, Request } from "@freestyle/ui";
+import {
+  Button,
+  ScrollArea,
+  databaseService,
+  Request,
+  ImportRequestDialog,
+} from "@freestyle/ui";
 
 interface Collection {
   id: string;
@@ -58,6 +64,7 @@ const CollectionItem = ({
   };
 
   // Load requests on mount if this is a root-level collection
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (level === 0 && !expanded) {
       toggle();
@@ -198,6 +205,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
   collections,
   onRequestClick,
 }) => {
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const treeCollections = buildCollectionTree(collections);
 
   return (
@@ -209,12 +217,10 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
           <Button
             variant="ghost"
             size="icon"
+            title="Import Request"
             className="ml-auto"
-            title="Add New Collection"
+            onClick={() => setIsImportOpen(true)}
           >
-            <PlusIcon className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" title="Import Request">
             <Upload className="h-4 w-4" />
           </Button>
         </div>
@@ -232,6 +238,10 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
           ))}
         </div>
       </ScrollArea>
+      <ImportRequestDialog
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+      />
     </div>
   );
 };
