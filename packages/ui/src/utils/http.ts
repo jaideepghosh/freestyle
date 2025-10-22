@@ -59,9 +59,9 @@ export const getStatusText = (code: number, providedText?: string): string => {
  */
 export const formatRequestTime = (time: number): string => {
   if (time < 1000) {
-    return `${time}ms`;
+    return `${time} ms`;
   }
-  return `${(time / 1000).toFixed(2)}s`;
+  return `${(time / 1000).toFixed(2)} s`;
 };
 
 /**

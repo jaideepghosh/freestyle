@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Check, Play, Loader2 } from "lucide-react";
+import { Copy, Check, Play, Loader2, Dot, Download } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import {
   Button,
@@ -76,6 +76,37 @@ export const ResponseSection = ({
       }
     }
   };
+
+  const handleDownload = () => {
+    if (!response) return;
+
+    let blob: Blob;
+    let extension: string;
+
+    if (responseType === "json") {
+      const content =
+        typeof response === "object"
+          ? JSON.stringify(response, null, 2)
+          : response;
+      blob = new Blob([content], { type: "application/json" });
+      extension = "json";
+    } else if (responseType === "html") {
+      blob = new Blob([response], { type: "text/html" });
+      extension = "html";
+    } else {
+      blob = new Blob([response], { type: "text/plain" });
+      extension = "txt";
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `response.${extension}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
   return (
     <div className="mt-2">
       <div className="relative">
@@ -99,10 +130,10 @@ export const ResponseSection = ({
             History
             <ChevronDown className="h-4 w-4" />
           </Button> */}
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-1">
               {/* Request Information */}
               {response && (requestTime || responseSize || statusCode) && (
-                <div className="flex items-center gap-3 text-xs text-gray-600">
+                <div className="flex items-center gap-1 text-xs text-gray-600">
                   {statusCode && (
                     <span
                       className={`font-medium ${getStatusColor(statusCode)}`}
@@ -110,11 +141,13 @@ export const ResponseSection = ({
                       {statusCode} {getStatusText(statusCode, statusText)}
                     </span>
                   )}
+                  <Dot className="text-ring" />
                   {requestTime && (
                     <span className="text-gray-500">
                       {formatRequestTime(requestTime)}
                     </span>
                   )}
+                  <Dot className="text-ring" />
                   {responseSize && (
                     <span className="text-gray-500">
                       {formatResponseSize(responseSize)}
@@ -122,7 +155,6 @@ export const ResponseSection = ({
                   )}
                 </div>
               )}
-
               {response && (
                 <Button
                   variant="ghost"
@@ -139,6 +171,16 @@ export const ResponseSection = ({
                   ) : (
                     <Copy className="h-4 w-4 transition-transform duration-200" />
                   )}
+                </Button>
+              )}
+              {response && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 transition-all duration-200 hover:bg-gray-100"
+                  onClick={handleDownload}
+                >
+                  <Download className="h-4 w-4 transition-all duration-200 scale-110" />
                 </Button>
               )}
               {responseType === "html" && (
