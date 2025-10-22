@@ -10,12 +10,14 @@ export * from "./components/ui/scroll-area";
 export * from "./components/ui/select";
 export * from "./components/ui/separator";
 export * from "./components/ui/tabs";
+export * from "./components/ui/sonner";
 
 export * from "./components/molecules/CollectionTree";
 export * from "./components/molecules/RequestSection";
 export * from "./components/molecules/ResponseSection";
 export * from "./components/molecules/Playground";
 export * from "./components/molecules/ResizableSplit";
+export * from "./components/molecules/FolderSelectionDialog";
 
 // Export types
 export * from "./types/api";
@@ -26,3 +28,6 @@ export * from "./hooks/useRequestState";
 // Export utilities
 export * from "./utils/validation";
 export * from "./utils/http";
+
+// Export database service
+export * from "./lib/database";

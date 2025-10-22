@@ -3,10 +3,23 @@ import {
   ResponseSection,
   useRequestState,
   ResizableSplit,
+  Request,
 } from "@freestyle/ui";
 import { useState, useCallback } from "react";
+import { FolderSelectionDialog } from "./FolderSelectionDialog";
+import { Toaster } from "../ui/sonner";
+import { databaseService } from "../../lib/database";
+import { toast } from "sonner";
 
-export const Playground = () => {
+interface PlaygroundProps {
+  onCollectionSaved?: () => void;
+  initialRequest?: Request;
+}
+
+export const Playground = ({
+  onCollectionSaved,
+  initialRequest,
+}: PlaygroundProps = {}) => {
   const [response, setResponse] = useState<string | null>(null);
   const [responseType, setResponseType] = useState<
     "json" | "html" | "text" | null
@@ -18,20 +31,111 @@ export const Playground = () => {
   );
   const [statusCode, setStatusCode] = useState<number | undefined>(undefined);
   const [statusText, setStatusText] = useState<string | undefined>(undefined);
+  const [showFolderDialog, setShowFolderDialog] = useState(false);
+
+  // Function to convert Request to RequestState format
+  const convertRequestToState = (request: Request) => {
+    let headers: any[] = [];
+    let queryParams: any[] = [];
+
+    try {
+      const parsedHeaders = JSON.parse(request.headers || "{}");
+      headers = Object.entries(parsedHeaders).map(([key, value], index) => ({
+        id: `header-${Date.now()}-${index}`,
+        key,
+        value: value as string,
+        description: "",
+        enabled: true,
+      }));
+    } catch (error) {
+      console.error("Failed to parse headers:", error);
+    }
+
+    try {
+      const parsedQueryParams = JSON.parse(request.query_params || "{}");
+      queryParams = Object.entries(parsedQueryParams).map(
+        ([key, value], index) => ({
+          id: `param-${Date.now()}-${index}`,
+          key,
+          value: value as string,
+          description: "",
+          enabled: true,
+        })
+      );
+    } catch (error) {
+      console.error("Failed to parse query params:", error);
+    }
+
+    // If no query params were parsed, add an empty one
+    if (queryParams.length === 0) {
+      queryParams = [
+        {
+          id: `param-${Date.now()}-0`,
+          key: "",
+          value: "",
+          description: "",
+          enabled: true,
+        },
+      ];
+    }
+
+    // If no headers were parsed, add an empty one
+    if (headers.length === 0) {
+      headers = [
+        {
+          id: `header-${Date.now()}-0`,
+          key: "",
+          value: "",
+          description: "",
+          enabled: true,
+        },
+      ];
+    }
+
+    return {
+      config: {
+        url: request.url,
+        method: request.method as any,
+        headers: {},
+        timeout: 30000,
+      },
+      headers,
+      queryParams,
+      bodyType: request.body ? "raw" : ("none" as any),
+      formData: [
+        {
+          id: `form-${Date.now()}-0`,
+          key: "",
+          value: "",
+          type: "Text" as any,
+          description: "",
+          enabled: true,
+        },
+      ],
+      rawContent: request.body || "",
+      rawFormat: "JSON" as any,
+      isLoading: false,
+      error: null,
+    };
+  };
 
   // Use the new request state management
   const {
     state: requestState,
     updateState: onRequestStateChange,
     validation,
-  } = useRequestState({
-    config: {
-      url: "https://jsonplaceholder.typicode.com/posts",
-      method: "GET",
-      headers: {},
-      timeout: 30000,
-    },
-  });
+  } = useRequestState(
+    initialRequest
+      ? convertRequestToState(initialRequest)
+      : {
+          config: {
+            url: "https://jsonplaceholder.typicode.com/posts",
+            method: "GET",
+            headers: {},
+            timeout: 30000,
+          },
+        }
+  );
 
   const makeRequest = useCallback(async () => {
     onRequestStateChange({ isLoading: true, error: null });
@@ -154,37 +258,180 @@ export const Playground = () => {
     }
   }, [requestState, onRequestStateChange]);
 
-  return (
-    <ResizableSplit
-      initialSplit={50}
-      minSize={150}
-      className="h-full"
-      splitterClassName="border-t border-b"
-    >
-      {/* Request Panel */}
-      <div className="h-full overflow-auto">
-        <RequestSection
-          requestState={requestState}
-          onRequestStateChange={onRequestStateChange}
-          onMakeRequest={makeRequest}
-        />
-      </div>
+  const handleSaveRequest = useCallback(async () => {
+    try {
+      // Validate request state
+      if (!requestState.config.url || !requestState.config.method) {
+        toast.error("Invalid request", {
+          description: "Please provide a valid URL and method",
+        });
+        return;
+      }
 
-      {/* Response Panel */}
-      <div className="h-full overflow-auto">
-        <div className="px-4 border-t -mx-4">
-          <ResponseSection
-            response={response}
-            responseType={responseType}
-            responseHeader={responseHeader}
-            isLoading={requestState.isLoading}
-            requestTime={requestTime}
-            responseSize={responseSize}
-            statusCode={statusCode}
-            statusText={statusText}
+      // Check if we have a saved folder preference
+      const savedFolderId = localStorage.getItem("requestSaveFolder");
+
+      if (savedFolderId) {
+        // Use saved folder
+        await saveRequestToFolder(savedFolderId);
+      } else {
+        // Show folder selection dialog
+        setShowFolderDialog(true);
+      }
+    } catch (err) {
+      console.error("Save request error:", err);
+      toast.error("Failed to save request", {
+        description: "An error occurred while saving the request",
+      });
+    }
+  }, [requestState]);
+
+  const saveRequestToFolder = useCallback(
+    async (folderId: string | null) => {
+      try {
+        // Build headers object
+        const headers: Record<string, string> = {};
+        requestState.headers
+          .filter((h) => h.enabled && h.key.trim())
+          .forEach((h) => {
+            headers[h.key] = h.value;
+          });
+
+        // Build query parameters object
+        const queryParams: Record<string, string> = {};
+        requestState.queryParams
+          .filter((p) => p.enabled && p.key.trim())
+          .forEach((p) => {
+            queryParams[p.key] = p.value;
+          });
+
+        // Build request body
+        let body: string | null = null;
+        if (requestState.bodyType === "raw" && requestState.rawContent) {
+          body = requestState.rawContent;
+        } else if (
+          requestState.bodyType === "form-data" &&
+          requestState.formData.length > 0
+        ) {
+          const formData = requestState.formData
+            .filter((f) => f.enabled && f.key.trim())
+            .map((f) => `${f.key}=${f.value}`)
+            .join("&");
+          body = formData;
+        } else if (
+          requestState.bodyType === "x-www-form-urlencoded" &&
+          requestState.formData.length > 0
+        ) {
+          const formData = requestState.formData
+            .filter((f) => f.enabled && f.key.trim())
+            .map(
+              (f) =>
+                `${encodeURIComponent(f.key)}=${encodeURIComponent(f.value)}`
+            )
+            .join("&");
+          body = formData;
+        }
+
+        // Generate request name from URL
+        let requestName = `${requestState.config.method.toUpperCase()} Request`;
+        try {
+          if (requestState.config.url) {
+            const url = new URL(requestState.config.url);
+            requestName = `${requestState.config.method.toUpperCase()} ${url.pathname}`;
+          }
+        } catch (error) {
+          // If URL is invalid, use a fallback name
+          requestName = `${requestState.config.method.toUpperCase()} ${requestState.config.url || "Request"}`;
+        }
+
+        await databaseService.saveRequest({
+          name: requestName,
+          folderId,
+          method: requestState.config.method,
+          url: requestState.config.url,
+          headers,
+          queryParams,
+          body,
+        });
+
+        const folderName = folderId ? "selected folder" : "Root";
+        toast.success("Request saved successfully", {
+          description: `Saved to ${folderName}`,
+        });
+
+        // Refresh collections if callback provided
+        if (onCollectionSaved) {
+          onCollectionSaved();
+        }
+      } catch (err) {
+        console.error("Save request to folder error:", err);
+        toast.error("Failed to save request", {
+          description: "An error occurred while saving the request",
+        });
+      }
+    },
+    [requestState]
+  );
+
+  const handleFolderSelect = useCallback(
+    async (folderId: string | null, folderName: string) => {
+      // Save folder preference to localStorage
+      if (folderId) {
+        localStorage.setItem("requestSaveFolder", folderId);
+      } else {
+        localStorage.removeItem("requestSaveFolder");
+      }
+
+      await saveRequestToFolder(folderId);
+      setShowFolderDialog(false);
+    },
+    [saveRequestToFolder]
+  );
+
+  return (
+    <>
+      <ResizableSplit
+        initialSplit={50}
+        minSize={150}
+        className="h-full"
+        splitterClassName="border-t border-b"
+      >
+        {/* Request Panel */}
+        <div className="h-full overflow-auto">
+          <RequestSection
+            requestState={requestState}
+            onRequestStateChange={onRequestStateChange}
+            onMakeRequest={makeRequest}
+            onSaveRequest={handleSaveRequest}
           />
         </div>
-      </div>
-    </ResizableSplit>
+
+        {/* Response Panel */}
+        <div className="h-full overflow-auto">
+          <div className="px-4 border-t -mx-4">
+            <ResponseSection
+              response={response}
+              responseType={responseType}
+              responseHeader={responseHeader}
+              isLoading={requestState.isLoading}
+              requestTime={requestTime}
+              responseSize={responseSize}
+              statusCode={statusCode}
+              statusText={statusText}
+            />
+          </div>
+        </div>
+      </ResizableSplit>
+
+      {/* Folder Selection Dialog */}
+      <FolderSelectionDialog
+        isOpen={showFolderDialog}
+        onClose={() => setShowFolderDialog(false)}
+        onSelect={handleFolderSelect}
+      />
+
+      {/* Sonner Toaster */}
+      <Toaster />
+    </>
   );
 };

@@ -1,36 +1,66 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ChevronRight,
   PlusIcon,
   EllipsisVertical,
   Star,
   Upload,
+  Folder,
+  FileText,
 } from "lucide-react";
-import { Button, ScrollArea } from "@freestyle/ui";
+import { Button, ScrollArea, databaseService, Request } from "@freestyle/ui";
 
 interface Collection {
+  id: string;
   name: string;
+  parent_id?: string | null;
   children?: Collection[];
+  requests?: Request[];
 }
 
 interface CollectionTreeProps {
   collections: Collection[];
+  onRequestClick?: (request: Request) => void;
 }
 
 // Recursive component to render each item and its children
 const CollectionItem = ({
   item,
   level = 0,
+  onRequestClick,
 }: {
   item: Collection;
   level?: number;
+  onRequestClick?: (request: Request) => void;
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
   const hasChildren = item.children && item.children.length > 0;
+  const hasRequests = requests.length > 0;
 
-  const toggle = () => {
-    if (hasChildren) setExpanded((prev) => !prev);
+  const toggle = async () => {
+    if (!expanded && !hasRequests) {
+      // Load requests when expanding for the first time
+      setLoadingRequests(true);
+      try {
+        const folderRequests = await databaseService.getRequests(item.id);
+        setRequests(folderRequests);
+      } catch (error) {
+        console.error("Failed to load requests:", error);
+      } finally {
+        setLoadingRequests(false);
+      }
+    }
+    setExpanded((prev) => !prev);
   };
+
+  // Load requests on mount if this is a root-level collection
+  useEffect(() => {
+    if (level === 0 && !expanded) {
+      toggle();
+    }
+  }, []);
 
   return (
     <div className={`text-sm ${level === 0 ? "border-b" : ""}`}>
@@ -40,7 +70,7 @@ const CollectionItem = ({
           onClick={toggle}
           style={{ paddingLeft: 8 + level * 8 }} // Indent by level
         >
-          {hasChildren ? (
+          {hasChildren || hasRequests || loadingRequests ? (
             <ChevronRight
               className={`h-4 w-4 text-muted-foreground transform transition-transform ${
                 expanded ? "rotate-90" : ""
@@ -50,6 +80,7 @@ const CollectionItem = ({
             <span style={{ width: 0, display: "inline-block" }} />
           )}
 
+          <Folder className="h-4 w-4 text-muted-foreground" />
           <span className="flex-1 text-left font-normal">
             {item.name.slice(0, 30)}
             {item.name.length > 30 ? "..." : ""}
@@ -80,11 +111,55 @@ const CollectionItem = ({
         </div>
       </div>
 
-      {hasChildren && expanded && item.children && (
+      {expanded && (
         <div className="space-y-0.5 py-1">
-          {item.children.map((child, idx) => (
-            <CollectionItem key={idx} item={child} level={level + 1} />
-          ))}
+          {/* Render child collections */}
+          {hasChildren && item.children && (
+            <>
+              {item.children.map((child, idx) => (
+                <CollectionItem
+                  key={idx}
+                  item={child}
+                  level={level + 1}
+                  onRequestClick={onRequestClick}
+                />
+              ))}
+            </>
+          )}
+
+          {/* Render requests */}
+          {loadingRequests && (
+            <div className="px-4 py-2 text-xs text-gray-500">
+              Loading requests...
+            </div>
+          )}
+
+          {!loadingRequests && requests.length > 0 && (
+            <div className="space-y-0.5">
+              {requests.map((request, idx) => (
+                <div
+                  key={request.id}
+                  className="flex items-center gap-2 py-1 px-2 hover:bg-gray-100/50 cursor-pointer"
+                  style={{ paddingLeft: 8 + (level + 1) * 8 }}
+                  onClick={() => onRequestClick?.(request)}
+                >
+                  <FileText className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-xs text-gray-700 truncate">
+                    {request.name}
+                  </span>
+                  <span className="text-xs text-gray-500 ml-auto">
+                    {request.method}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!loadingRequests && requests.length === 0 && !hasChildren && (
+            <div className="px-4 py-2 text-xs text-gray-500">
+              No requests saved yet
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -93,6 +168,7 @@ const CollectionItem = ({
 
 export const CollectionTree: React.FC<CollectionTreeProps> = ({
   collections,
+  onRequestClick,
 }) => {
   return (
     <div className="w-80 border-r flex flex-col">
@@ -118,7 +194,11 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
       <ScrollArea className="flex-1">
         <div>
           {collections.map((item, idx) => (
-            <CollectionItem key={idx} item={item} />
+            <CollectionItem
+              key={idx}
+              item={item}
+              onRequestClick={onRequestClick}
+            />
           ))}
         </div>
       </ScrollArea>
