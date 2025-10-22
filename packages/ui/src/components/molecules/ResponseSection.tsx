@@ -1,3 +1,5 @@
+"use client";
+
 import { Copy, Check, Play, Loader2 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import {
