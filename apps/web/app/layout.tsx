@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "@freestyle/ui/globals.css";
-import { NextIntlClientProvider } from "next-intl";
+import I18nProvider from "./lib/I18nProvider";
 import { cookies } from "next/headers";
 import { getMessages, type Locale } from "@freestyle/locales";
 
@@ -43,9 +43,9 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <I18nProvider initialLocale={locale} initialMessages={messages}>
           {children}
-        </NextIntlClientProvider>
+        </I18nProvider>
       </body>
     </html>
   );
