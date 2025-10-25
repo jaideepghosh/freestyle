@@ -19,6 +19,7 @@ import {
   Request,
   Input,
 } from "@freestyle/ui";
+import SettingsDrawer from "./components/SettingsDrawer";
 
 interface TabData {
   id: string;
@@ -279,6 +280,7 @@ export default function Freestyle() {
                 </SelectContent>
               </Select>
             </div>
+            <SettingsDrawer />
           </div>
 
           {tabs.map((tab) => (
