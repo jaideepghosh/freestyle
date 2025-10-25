@@ -20,6 +20,7 @@ import {
   Input,
 } from "@freestyle/ui";
 import SettingsDrawer from "./components/SettingsDrawer";
+import { useTranslations } from "next-intl";
 
 interface TabData {
   id: string;
@@ -29,6 +30,7 @@ interface TabData {
 }
 
 export default function Freestyle() {
+  const t = useTranslations();
   const [collections, setCollections] = useState<Folder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [tabs, setTabs] = useState<TabData[]>([]);
@@ -69,7 +71,7 @@ export default function Freestyle() {
     const newTabId = `new-${Date.now()}`;
     const newTab: TabData = {
       id: newTabId,
-      name: "New Request",
+      name: t("new_request"),
       isNew: true,
     };
     setTabs((prev) => [...prev, newTab]);
@@ -184,11 +186,11 @@ export default function Freestyle() {
       <div className="w-80 border-r bg-gray-50/50">
         {isLoading ? (
           <div className="p-4 text-sm text-gray-500">
-            Loading collections...
+            {t("loading_collections")}
           </div>
         ) : collections.length === 0 ? (
           <div className="p-4 text-sm text-gray-500">
-            No collections yet. Save a request to create your first collection!
+            {t("empty_collections")}
           </div>
         ) : (
           <CollectionTree

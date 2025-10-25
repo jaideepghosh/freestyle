@@ -1,7 +1,9 @@
 {
-  "app.title": "Freestyle",
-  "app.description": "Freestyle is an open-source, local-first API testing & documentation app — combining Postman’s usability with Bruno’s portability, while staying enterprise-ready and self-hostable.",
-  "tabs.newRequest": "New Request",
-  "collections.loading": "Loading collections...",
-  "collections.empty": "No collections yet. Save a request to create your first collection!"
+  "app": {
+    "title": "Freestyle",
+    "description": "Freestyle is an open-source, local-first API testing & documentation app — combining Postman’s usability with Bruno’s portability, while staying enterprise-ready and self-hostable."
+  },
+  "new_request": "New Request",
+  "loading_collections": "Loading collections...",
+  "empty_collections": "No collections yet. Save a request to create your first collection!"
 }
