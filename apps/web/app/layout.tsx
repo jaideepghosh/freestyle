@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-// import "./globals.css";
 import "@freestyle/ui/globals.css";
+import { NextIntlClientProvider } from "next-intl";
+import { cookies } from "next/headers";
+import { getMessages, type Locale } from "@freestyle/locales";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -12,21 +14,38 @@ const geistMono = localFont({
   variable: "--font-geist-mono",
 });
 
-export const metadata: Metadata = {
-  title: "Freestyle",
-  description:
-    "Freestyle is an open-source, local-first API testing & documentation app — combining Postman’s usability with Bruno’s portability, while staying enterprise-ready and self-hostable.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const cookieStore = await cookies();
+  const cookieLocale = cookieStore.get("locale")?.value as Locale | undefined;
+  const locale: Locale =
+    cookieLocale === "en" || cookieLocale === "es" ? cookieLocale : "en";
+  const messages = getMessages(locale);
 
-export default function RootLayout({
+  return {
+    title: messages["app.title"] ?? "Freestyle",
+    description:
+      messages["app.description"] ??
+      "Freestyle is an open-source, local-first API testing & documentation app — combining Postman’s usability with Bruno’s portability, while staying enterprise-ready and self-hostable.",
+  };
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const cookieLocale = cookieStore.get("locale")?.value as Locale | undefined;
+  const locale: Locale =
+    cookieLocale === "en" || cookieLocale === "es" ? cookieLocale : "en";
+  const messages = getMessages(locale);
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

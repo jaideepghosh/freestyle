@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Globe, Settings } from "lucide-react";
 import { Button } from "@freestyle/ui";
 import {
@@ -19,13 +19,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@freestyle/ui";
+import { useRouter } from "next/navigation";
 
 export default function SettingsDrawer() {
   const [language, setLanguage] = useState("en");
+  const router = useRouter();
+
+  useEffect(() => {
+    const cookie = typeof document !== "undefined" ? document.cookie : "";
+    const match = cookie
+      .split("; ")
+      .find((row) => row.startsWith("locale="))
+      ?.split("=")[1];
+    if (match === "en" || match === "es") {
+      setLanguage(match);
+    }
+  }, []);
 
   const handleLanguageChange = (value: string) => {
     setLanguage(value);
-    console.log("Language changed to:", value);
+    // Persist the chosen locale for the server layout
+    document.cookie = `locale=${value}; path=/; max-age=31536000`;
+    // Refresh to re-render server components with new locale
+    router.refresh();
   };
 
   return (
@@ -56,12 +72,6 @@ export default function SettingsDrawer() {
                 <SelectContent>
                   <SelectItem value="en">English</SelectItem>
                   <SelectItem value="es">Español</SelectItem>
-                  <SelectItem value="fr">Français</SelectItem>
-                  <SelectItem value="de">Deutsch</SelectItem>
-                  <SelectItem value="zh">中文</SelectItem>
-                  <SelectItem value="ja">日本語</SelectItem>
-                  <SelectItem value="ar">العربية</SelectItem>
-                  <SelectItem value="hi">हिन्दी</SelectItem>
                 </SelectContent>
               </Select>
             </div>
