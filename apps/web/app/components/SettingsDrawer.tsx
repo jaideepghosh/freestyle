@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Globe, Settings } from "lucide-react";
+import { Moon, Sun, Globe, Settings } from "lucide-react";
 import { Button } from "@freestyle/ui";
 import {
   Drawer,
@@ -13,6 +13,8 @@ import {
   DrawerTitle,
   DrawerTrigger,
   Label,
+  RadioGroup,
+  RadioGroupItem,
   Select,
   SelectContent,
   SelectItem,
@@ -22,6 +24,7 @@ import {
 import { useRouter } from "next/navigation";
 
 export default function SettingsDrawer() {
+  const [theme, setTheme] = useState("light");
   const [language, setLanguage] = useState("en");
   const router = useRouter();
 
@@ -35,6 +38,15 @@ export default function SettingsDrawer() {
       setLanguage(match);
     }
   }, []);
+  const handleThemeChange = (value: string) => {
+    setTheme(value);
+    // Apply theme to document
+    if (value === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
 
   const handleLanguageChange = (value: string) => {
     setLanguage(value);
@@ -56,11 +68,48 @@ export default function SettingsDrawer() {
           <DrawerHeader>
             <DrawerTitle>Settings</DrawerTitle>
             <DrawerDescription>
-              Customize your language preferences
+              Customize your theme and language preferences
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="px-4 pb-0 space-y-6">
+          <div className="p-4 pb-0 space-y-6">
+            {/* Theme Switcher */}
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Theme</Label>
+              <RadioGroup value={theme} onValueChange={handleThemeChange}>
+                <div className="flex items-center space-x-3 rounded-lg border p-4 hover:bg-accent cursor-pointer">
+                  <RadioGroupItem value="light" id="light" />
+                  <Label
+                    htmlFor="light"
+                    className="flex items-center gap-2 cursor-pointer flex-1"
+                  >
+                    <Sun className="h-4 w-4" />
+                    Light
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 rounded-lg border p-4 hover:bg-accent cursor-pointer">
+                  <RadioGroupItem value="dark" id="dark" />
+                  <Label
+                    htmlFor="dark"
+                    className="flex items-center gap-2 cursor-pointer flex-1"
+                  >
+                    <Moon className="h-4 w-4" />
+                    Dark
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 rounded-lg border p-4 hover:bg-accent cursor-pointer">
+                  <RadioGroupItem value="system" id="system" />
+                  <Label
+                    htmlFor="system"
+                    className="flex items-center gap-2 cursor-pointer flex-1"
+                  >
+                    <Settings className="h-4 w-4" />
+                    System
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
             {/* Language Switcher */}
             <div className="space-y-4">
               <Label className="text-base font-semibold">Language</Label>
