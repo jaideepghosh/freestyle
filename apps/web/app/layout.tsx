@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: messages["app.title"] ?? "Freestyle",
     description:
       messages["app.description"] ??
-      "Freestyle is an open-source, local-first API testing & documentation app — combining Postman’s usability with Bruno’s portability, while staying enterprise-ready and self-hostable.",
+      "Freestyle is an open-source, local-first API testing & documentation app — combining Postman's usability with Bruno's portability, while staying enterprise-ready and self-hostable.",
   };
 }
 
@@ -40,8 +40,39 @@ export default async function RootLayout({
     cookieLocale === "en" || cookieLocale === "es" ? cookieLocale : "en";
   const messages = getMessages(locale);
 
+  const cookieTheme = cookieStore.get("theme")?.value ?? "light";
+  const theme =
+    cookieTheme === "dark" ||
+    cookieTheme === "light" ||
+    cookieTheme === "system"
+      ? cookieTheme
+      : "light";
+
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
+      <head>
+        {/* Apply theme immediately to prevent flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const theme = localStorage.getItem('theme') || '${theme}';
+                if (theme === 'dark') {
+                  document.documentElement.classList.add('dark');
+                } else if (theme === 'system') {
+                  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <I18nProvider initialLocale={locale} initialMessages={messages}>
           {children}

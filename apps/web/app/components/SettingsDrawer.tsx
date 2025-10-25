@@ -30,22 +30,56 @@ export default function SettingsDrawer() {
 
   useEffect(() => {
     const cookie = typeof document !== "undefined" ? document.cookie : "";
-    const match = cookie
+
+    // Load language from cookie
+    const languageMatch = cookie
       .split("; ")
       .find((row) => row.startsWith("locale="))
       ?.split("=")[1];
-    if (match === "en" || match === "es") {
-      setLanguage(match);
+    if (languageMatch === "en" || languageMatch === "es") {
+      setLanguage(languageMatch);
+    }
+
+    // Load theme from cookie
+    const themeMatch = cookie
+      .split("; ")
+      .find((row) => row.startsWith("theme="))
+      ?.split("=")[1];
+    if (
+      themeMatch === "dark" ||
+      themeMatch === "light" ||
+      themeMatch === "system"
+    ) {
+      setTheme(themeMatch);
+      applyTheme(themeMatch);
+    } else {
+      // If no theme is set, apply the default light theme
+      applyTheme("light");
     }
   }, []);
-  const handleThemeChange = (value: string) => {
-    setTheme(value);
-    // Apply theme to document
+
+  const applyTheme = (value: string) => {
+    if (typeof document === "undefined") return;
+
     if (value === "dark") {
       document.documentElement.classList.add("dark");
-    } else {
+    } else if (value === "light") {
       document.documentElement.classList.remove("dark");
+    } else if (value === "system") {
+      // Check system preference
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
     }
+  };
+
+  const handleThemeChange = (value: string) => {
+    setTheme(value);
+    applyTheme(value);
+    // Persist the chosen theme to cookies
+    document.cookie = `theme=${value}; path=/; max-age=31536000`;
   };
 
   const handleLanguageChange = (value: string) => {
