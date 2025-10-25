@@ -11,9 +11,11 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@freestyle/locales": "*",
     "@freestyle/ui": "*",
     "autoprefixer": "^10.4.21",
     "next": "^15.5.0",
+    "next-intl": "^4.4.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwindcss": "^4.1.14"
