@@ -181,45 +181,22 @@ export const Playground = ({
         ? `${requestState.config.url}?${queryParams}`
         : requestState.config.url;
 
-      // Build request body based on body type
-      let body: string | FormData | undefined;
-      if (requestState.bodyType === "raw" && requestState.rawContent) {
-        body = requestState.rawContent;
-      } else if (
-        requestState.bodyType === "form-data" &&
-        requestState.formData.length > 0
-      ) {
-        const formData = new FormData();
-        requestState.formData
-          .filter((f) => f.enabled && f.key.trim())
-          .forEach((f) => {
-            if (f.type === "File") {
-              // Handle file uploads - this would need file input handling
-              // For now, just add the value as text
-              formData.append(f.key, f.value);
-            } else {
-              formData.append(f.key, f.value);
-            }
-          });
-        body = formData;
-      } else if (
-        requestState.bodyType === "x-www-form-urlencoded" &&
-        requestState.formData.length > 0
-      ) {
-        const formData = requestState.formData
-          .filter((f) => f.enabled && f.key.trim())
-          .map(
-            (f) => `${encodeURIComponent(f.key)}=${encodeURIComponent(f.value)}`
-          )
-          .join("&");
-        body = formData;
-        headers["Content-Type"] = "application/x-www-form-urlencoded";
-      }
-
-      const res = await fetch(url, {
+      // Prepare payload for server-side proxy to avoid CORS
+      const proxyPayload: any = {
+        url,
         method: requestState.config.method,
         headers,
-        body,
+        bodyType: requestState.bodyType,
+        rawContent: requestState.rawContent || null,
+        formData: requestState.formData
+          .filter((f) => f.enabled && f.key.trim())
+          .map((f) => ({ key: f.key, value: f.value, type: f.type })),
+      };
+
+      const res = await fetch("/api/proxy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(proxyPayload),
       });
 
       // Capture request timing
