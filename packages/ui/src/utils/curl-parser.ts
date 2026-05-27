@@ -27,26 +27,38 @@ export function cURLParser(curlCommand: string): ParsedCurl {
 
   while (i < tokens.length) {
     const token = tokens[i];
+    if (typeof token === "undefined") {
+      break;
+    }
 
     if (token === "-X" || token === "--request") {
-      result.method = tokens[++i].toUpperCase();
+      if (i + 1 < tokens.length) {
+        const nextToken = tokens[++i];
+        if (typeof nextToken === "string") {
+          result.method = nextToken.toUpperCase();
+        }
+      }
       i++;
     } else if (token === "-H" || token === "--header") {
-      const header = tokens[++i];
-      const colonIndex = header.indexOf(":");
-      if (colonIndex > -1) {
-        const key = header.substring(0, colonIndex).trim();
-        const value = header.substring(colonIndex + 1).trim();
-        result.headers[key] = value;
+      const header = i + 1 < tokens.length ? tokens[++i] : undefined;
+      if (typeof header === "string") {
+        const colonIndex = header.indexOf(":");
+        if (colonIndex > -1) {
+          const key = header.substring(0, colonIndex).trim();
+          const value = header.substring(colonIndex + 1).trim();
+          result.headers[key] = value;
+        }
       }
       i++;
     } else if (token === "-b" || token === "--cookie") {
       // Parse cookies into Cookie header
-      const cookieValue = tokens[++i];
-      if (result.headers["Cookie"]) {
-        result.headers["Cookie"] += "; " + cookieValue;
-      } else {
-        result.headers["Cookie"] = cookieValue;
+      const cookieValue = i + 1 < tokens.length ? tokens[++i] : undefined;
+      if (typeof cookieValue === "string" && cookieValue) {
+        if (result.headers["Cookie"]) {
+          result.headers["Cookie"] += "; " + cookieValue;
+        } else {
+          result.headers["Cookie"] = cookieValue;
+        }
       }
       i++;
     } else if (
@@ -55,9 +67,12 @@ export function cURLParser(curlCommand: string): ParsedCurl {
       token === "--data-raw" ||
       token === "--data-binary"
     ) {
-      result.body = tokens[++i];
-      if (result.method === "GET") {
-        result.method = "POST";
+      const dataValue = i + 1 < tokens.length ? tokens[++i] : undefined;
+      if (typeof dataValue === "string") {
+        result.body = dataValue;
+        if (result.method === "GET") {
+          result.method = "POST";
+        }
       }
       i++;
     } else if (
@@ -69,12 +84,18 @@ export function cURLParser(curlCommand: string): ParsedCurl {
     ) {
       i++;
     } else if (token === "-u" || token === "--user") {
-      i += 2;
-    } else if (token.startsWith("-")) {
+      i = Math.min(i + 2, tokens.length);
+    } else if (typeof token === "string" && token.startsWith("-")) {
       // Unknown flag, skip it and its potential value
       i++;
-      if (i < tokens.length && !tokens[i].startsWith("-")) {
-        i++;
+      if (i < tokens.length) {
+        const potentialValue = tokens[i];
+        if (
+          typeof potentialValue === "string" &&
+          !potentialValue.startsWith("-")
+        ) {
+          i++;
+        }
       }
     } else {
       // This is the URL
@@ -86,7 +107,7 @@ export function cURLParser(curlCommand: string): ParsedCurl {
   // Parse query parameters from URL
   const urlParts = result.url.split("?");
   if (urlParts.length > 1) {
-    result.url = urlParts[0];
+    result.url = urlParts[0] ?? "";
     const queryString = urlParts.slice(1).join("?");
     const params = new URLSearchParams(queryString);
     params.forEach((value, key) => {

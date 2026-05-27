@@ -41,7 +41,9 @@ export default function I18nProvider({
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       if (tz) setTimeZone(tz);
-    } catch {}
+    } catch {
+      console.log("i18nProvider: failed to set timezone");
+    }
 
     const onLocaleChange = (e: Event) => {
       const custom = e as CustomEvent<string>;

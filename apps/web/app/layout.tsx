@@ -21,10 +21,23 @@ export async function generateMetadata(): Promise<Metadata> {
     cookieLocale === "en" || cookieLocale === "es" ? cookieLocale : "en";
   const messages = getMessages(locale);
 
+  // Support nested message objects (e.g., app: { title, description })
+  const nestedApp =
+    typeof (messages as Record<string, unknown>).app === "object"
+      ? ((messages as Record<string, unknown>).app as Record<string, unknown>)
+      : undefined;
+  const appTitle =
+    (typeof nestedApp?.title === "string" ? nestedApp.title : undefined) ||
+    (messages["app.title"] as string | undefined);
+  const appDescription =
+    (typeof nestedApp?.description === "string"
+      ? nestedApp.description
+      : undefined) || (messages["app.description"] as string | undefined);
+
   return {
-    title: messages["app.title"] ?? "Freestyle",
+    title: appTitle ?? "Freestyle",
     description:
-      messages["app.description"] ??
+      appDescription ??
       "Freestyle is an open-source, local-first API testing & documentation app — combining Postman's usability with Bruno's portability, while staying enterprise-ready and self-hostable.",
   };
 }

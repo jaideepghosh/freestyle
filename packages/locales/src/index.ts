@@ -1,4 +1,4 @@
-export type Messages = Record<string, string>;
+export type Messages = { [key: string]: string | Messages };
 
 import en from "./en.json";
 import es from "./es.json";
